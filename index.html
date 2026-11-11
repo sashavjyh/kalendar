@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Календарь видеографа</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&family=Unbounded:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0b0d; --card:#151518; --card2:#1d1d21; --line:#2a2a30;
+    --text:#f2f2f4; --muted:#8c8c96; --dim:#55555e;
+    --accent:#ff9f0a; --danger:#ff453a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--bg);color:var(--text);font-family:'Golos Text',-apple-system,system-ui,sans-serif}
+  body{padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 40px)}
+  .wrap{max-width:1180px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.5px}
+  .yearnav{display:flex;align-items:center;gap:6px}
+  .yearnav button{background:var(--card);border:1px solid var(--line);color:var(--text);width:38px;height:38px;border-radius:12px;font-size:18px;cursor:pointer}
+  .status{font-size:13px;color:var(--muted);margin:-8px 0 14px;min-height:16px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+  .stat b{display:block;font-size:22px;font-weight:800;letter-spacing:-.3px}
+  .stat span{font-size:12px;color:var(--muted)}
+  .months{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+  .month{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 12px 10px}
+  .mhead{display:flex;align-items:center;justify-content:space-between;margin:0 4px 10px}
+  .mname{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;padding:3px 9px;border-radius:8px}
+  .mcount{font-size:12px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
+  .wd{font-size:10px;color:var(--dim);font-weight:700;padding-bottom:4px}
+  .d{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;border-radius:10px;cursor:pointer;color:#c9c9cf;position:relative;transition:transform .1s}
+  .d:active{transform:scale(.92)}
+  .d.we{color:#9a9aa3}
+  .d.today{outline:1.5px solid var(--muted)}
+  .d.busy{background:var(--mc);color:#0b0b0d;font-weight:800}
+  .d.busy.incomplete::after{content:"";position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 0 1.5px var(--bg)}
+  @media (hover:hover){.d:hover:not(.busy){background:var(--card2)}}
+  h2{font-size:20px;font-weight:800;margin:30px 0 12px}
+  .list{display:flex;flex-direction:column;gap:8px}
+  .row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 14px;cursor:pointer}
+  .row .dt{min-width:64px;font-weight:800;font-size:14px;color:var(--mc)}
+  .row .who{flex:1;font-size:14px;font-weight:600}
+  .row .who small{display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:2px}
+  .row .sum{font-size:13px;color:var(--muted);white-space:nowrap}
+  .empty{color:var(--muted);font-size:14px;padding:14px;background:var(--card);border-radius:14px;border:1px dashed var(--line)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:14px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+
+  .quick{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px 18px;margin-bottom:22px}
+  .qhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .qhead h3{font-size:20px;font-weight:800;letter-spacing:-.3px}
+  .qbtn{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:7px 12px;font:600 13px 'Golos Text',system-ui,sans-serif;cursor:pointer}
+  .qline{font-size:17px;line-height:1.7}
+  .qline b{font-weight:700}
+  .qempty{color:var(--muted);font-size:14px}
+  .quick textarea{width:100%;min-height:190px;background:#0f0f12;border:1px solid var(--line);border-radius:12px;color:var(--text);font:500 17px/1.6 'Golos Text',system-ui,sans-serif;padding:12px;outline:none;resize:vertical}
+  .quick textarea:focus{border-color:var(--accent)}
+  .qhint{font-size:12px;color:var(--dim);margin:6px 0 10px}
+  .qactions{display:flex;gap:8px;flex-wrap:wrap}
+  .qactions .btn{flex:1 1 140px;padding:12px}
+  .qmsg{font-size:13px;margin-top:10px;line-height:1.45}
+  .qmsg.bad{color:var(--danger)} .qmsg.ok{color:#30d158} .qmsg.ask{color:#ffd60a}
+
+  .d .cnt{position:absolute;bottom:2px;right:3px;font-size:9px;font-weight:800;background:#0b0b0d;color:#fff;border-radius:6px;padding:0 3px;line-height:13px}
+  .label{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:7px;background:rgba(255,255,255,.1);margin-left:6px;vertical-align:2px}
+  .wcard+.wcard{margin-top:26px;padding-top:22px;border-top:1px dashed var(--line)}
+  .wcard h4{font-size:21px;font-weight:800;margin-bottom:10px;line-height:1.2}
+  .addmore{width:100%;margin-top:18px;background:transparent;border:1px dashed var(--line);color:var(--muted)}
+  .stat.secret{cursor:pointer;user-select:none}
+  .stat.secret b{transition:filter .2s}
+  .stat.secret.hidden b{filter:blur(9px);opacity:.6}
+  .stat.secret span::after{content:" · показать";color:var(--dim)}
+  .stat.secret:not(.hidden) span::after{content:" · скрыть"}
+  .f.pkg{flex-direction:column;gap:8px}
+  .f.pkg .top{display:flex;justify-content:space-between;gap:14px}
+  .give{font-size:13px;color:var(--muted)}
+  .give .tags{margin:6px 0 0}
+  .d.todo{box-shadow:0 0 0 2px var(--bg),0 0 0 4px #ffd60a}
+  .todo-box{font-size:14px;line-height:1.4;color:#ffd60a;background:rgba(255,214,10,.1);border:1px solid rgba(255,214,10,.35);padding:10px 12px;border-radius:12px;margin-bottom:12px}
+  .todo-box b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+  .todos{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .todos h5{font-size:13px;color:#ffd60a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .todo-row{display:flex;gap:10px;font-size:14px;padding:6px 0;cursor:pointer;line-height:1.35}
+  .todo-row .dt{font-weight:800;color:#ffd60a;min-width:44px}
+  .row .flag{color:#ffd60a;font-size:12px;font-weight:700;margin-left:6px}
+  .tododone{display:block;width:100%;margin-top:10px;padding:10px;background:#ffd60a;color:#111;font-size:14px}
+  .stages{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+  .stg{font:600 12px 'Golos Text',system-ui,sans-serif;padding:7px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
+  .stg.on{color:#111;border-color:transparent}
+  .dl{font-size:13px;font-weight:600;padding:8px 12px;border-radius:10px;margin-bottom:12px;background:var(--card);border:1px solid var(--line)}
+  .dl.soon{color:#ffd60a;border-color:rgba(255,214,10,.4)} .dl.late{color:var(--danger);border-color:rgba(255,69,58,.45)} .dl.ok{color:#30d158}
+  .paid{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(48,209,88,.1);border:1px solid rgba(48,209,88,.35);color:#30d158;border-radius:12px;padding:10px 12px;font-size:14px;font-weight:700;margin-bottom:12px}
+  .paid button,.paybtn{font:600 12px 'Golos Text',system-ui,sans-serif;border-radius:9px;padding:7px 10px;cursor:pointer}
+  .paid button{background:transparent;border:1px solid rgba(48,209,88,.4);color:#30d158}
+  .paybtn{width:100%;padding:11px;margin-bottom:12px;background:var(--card);border:1px dashed rgba(48,209,88,.5);color:#30d158;font-size:14px}
+  .work{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .work h5{font-size:13px;color:#64d2ff;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .work-row{display:flex;gap:10px;font-size:14px;padding:6px 0;cursor:pointer;line-height:1.35;align-items:baseline}
+  .work-row .dt{font-weight:800;min-width:44px}
+  .work-row .st{color:var(--muted);font-size:12px}
+  .work-row .late{color:var(--danger);font-weight:700} .work-row .soon{color:#ffd60a;font-weight:700}
+  .d.done{opacity:.45}
+  .row .pd{color:#30d158;font-size:12px;font-weight:700;margin-left:6px}
+  .chk{display:flex;gap:11px;align-items:center;padding:11px 12px;border-radius:12px;border:1.5px solid var(--danger);margin-bottom:8px;cursor:pointer;font-size:14px;font-weight:600;line-height:1.35;user-select:none}
+  .chk .circ{width:24px;height:24px;border-radius:50%;border:2px solid var(--danger);flex:none;display:flex;align-items:center;justify-content:center;color:transparent;font-size:14px;font-weight:900}
+  .chk.on{border-color:#30d158;background:rgba(48,209,88,.16);color:#30d158}
+  .chk.on .circ{background:#30d158;border-color:#30d158;color:#0b0b0d}
+  .chk .late{color:var(--danger);font-weight:800}
+  .chk.busy{opacity:.5;pointer-events:none}
+  .checks{margin:4px 0 12px}
+  .shead{position:relative;justify-content:center!important;text-align:center;padding:4px 40px 0}
+  .shead>div{width:100%}
+  .shead .x{position:absolute;top:0;right:0}
+  .sdate{display:block!important;width:fit-content;margin:0 auto 10px!important;font-size:30px!important;font-weight:800;letter-spacing:-.5px;padding:8px 18px!important;border-radius:14px!important}
+  .shead .stitle{text-align:center}
+  .lmonth{margin-bottom:20px}
+  .lmonth h3{font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;display:inline-block;padding:4px 11px;border-radius:9px;margin-bottom:10px}
+  .lmonth h3 span{font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;opacity:.75;margin-left:6px}
+  .list2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media (max-width:640px){.list2{grid-template-columns:1fr}}
+  .plabel{font-family:'Golos Text',system-ui,sans-serif;font-weight:500;font-size:14px;color:var(--muted);margin-right:6px;letter-spacing:0}
+  .seg{display:flex;gap:6px;margin:12px 0 5px}
+  .seg button{flex:1;font:600 13px 'Golos Text',system-ui,sans-serif;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
+  .seg button.on{background:var(--text);color:#111;border-color:transparent}
+  .givebox{margin-top:10px}
+  .givebox .tags{margin:0}
+  .tgnote{font-size:13px;color:#ffd60a;background:rgba(255,214,10,.08);border:1px solid rgba(255,214,10,.3);border-radius:12px;padding:10px 12px;margin:-4px 0 16px}
+  .tools{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
+  .tools .btn{flex:1 1 160px;font-size:14px;padding:12px}
+  .foot{color:var(--dim);font-size:12px;text-align:center;margin-top:18px}
+  .io textarea{width:100%;min-height:200px;background:#0f0f12;border:1px solid var(--line);border-radius:12px;color:var(--text);font:12px/1.4 ui-monospace,Menlo,monospace;padding:10px}
+  .io p{font-size:14px;color:var(--muted);line-height:1.45;margin:0 0 10px}
+  /* sheet */
+  .veil{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;z-index:10}
+  .veil.open{display:flex}
+  .sheet{background:#121215;border:1px solid var(--line);border-bottom:none;width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:24px 24px 0 0;padding:20px 20px calc(env(safe-area-inset-bottom) + 24px);animation:up .22s ease-out}
+  @media (min-width:700px){.veil{align-items:center}.sheet{border-radius:24px;border-bottom:1px solid var(--line)}}
+  @keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+  .shead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .sdate{display:inline-block;font-size:14px;font-weight:800;padding:4px 10px;border-radius:8px;margin-bottom:8px}
+  .stitle{font-size:24px;font-weight:800;letter-spacing:-.3px;line-height:1.15}
+  .x{background:var(--card2);border:none;color:var(--text);width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;flex:none}
+  .warn{font-size:12px;color:#ffd60a;background:rgba(255,214,10,.08);border:1px solid rgba(255,214,10,.25);padding:7px 10px;border-radius:10px;margin-bottom:12px}
+  .fields{display:flex;flex-direction:column;background:var(--card);border-radius:16px;border:1px solid var(--line);overflow:hidden}
+  .f{display:flex;justify-content:space-between;gap:14px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:14px}
+  .f:last-child{border-bottom:none}
+  .f span{color:var(--muted);flex:none}
+  .f b{font-weight:600;text-align:right}
+  .f b.none{color:var(--dim);font-weight:500}
+  .money{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+  .money div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+  .money b{display:block;font-size:17px;font-weight:800}
+  .money span{font-size:11px;color:var(--muted)}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+  .tag{font-size:13px;font-weight:600;padding:6px 11px;border-radius:999px;background:var(--card2);border:1px solid var(--line)}
+  .note{font-size:14px;line-height:1.45;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;white-space:pre-wrap;margin-top:12px}
+  .actions{display:flex;gap:8px;margin-top:16px}
+  .btn{flex:1;border:none;border-radius:14px;padding:14px;font:700 15px 'Golos Text',system-ui,sans-serif;cursor:pointer;background:var(--card2);color:var(--text)}
+  .btn.primary{background:var(--accent);color:#111}
+  .btn.danger{background:transparent;color:var(--danger);border:1px solid #3a1d1b;flex:0 0 auto;padding:14px 16px}
+  .btn:disabled{opacity:.5}
+  form label{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px;font-weight:600}
+  form input,form textarea{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--text);font:500 16px 'Golos Text',system-ui,sans-serif;padding:11px 12px;outline:none}
+  form input:focus,form textarea:focus{border-color:var(--accent)}
+  form textarea{min-height:76px;resize:vertical}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .err{color:var(--danger);font-size:13px;margin-top:10px;min-height:16px}
+  .hint{font-size:12px;color:var(--dim);margin-top:4px}
+  @media (max-width:420px){h1{font-size:26px}.stat b{font-size:18px}}
+  /* заголовки — Unbounded, как на сайте */
+  h1,h2,.mname,.qhead h3,.lmonth h3,.stat b,.sdate,.stitle,.wcard h4,.row .dt,.qline b,.money b{font-family:'Unbounded','Golos Text',sans-serif!important;letter-spacing:-.2px}
+  h1{font-weight:500!important;font-size:28px!important}
+  .qhead h3{font-weight:500!important;font-size:18px!important}
+  .mname,.lmonth h3{font-weight:500!important;font-size:13px!important}
+  .stat b{font-weight:500!important;font-size:19px!important}
+  .sheet .shead .sdate{font-weight:500!important;font-size:21px!important;white-space:nowrap}
+  .wcard h4,.stitle{font-weight:500!important;font-size:19px!important}
+  .row .dt,.qline b{font-weight:500!important}
+  .money b{font-weight:500!important;font-size:14px!important;white-space:nowrap}
+  @media (max-width:420px){h1{font-size:23px!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">Свадьбы</h1>
+    <div class="yearnav"><button id="prev" aria-label="Прошлый год">‹</button><button id="next" aria-label="Следующий год">›</button></div>
+  </header>
+  <div class="status" id="status">Загружаю…</div>
+  <div class="tgnote" id="tgnote" hidden>Ты открыл календарь не через Telegram — записи сохраняются только в этом браузере. Открой бота <b>@videograf_kalendar_bot</b>, чтобы календарь был с тобой везде.</div>
+  <div class="quick" id="quick"></div>
+  <div class="stats">
+    <div class="stat"><b id="sCount">—</b><span>свадеб</span></div>
+    <div class="stat secret hidden" data-secret><b id="sBal">—</b><span>ждём</span></div>
+    <div class="stat secret hidden" data-secret><b id="sPre">—</b><span>получено</span></div>
+  </div>
+  <div class="months" id="months"></div>
+  <div class="legend">
+    <span><i style="background:#ff9f0a"></i>занято — нажми, чтобы открыть</span>
+    <span><i style="background:#fff;border-radius:50%;width:8px;height:8px"></i>не все данные заполнены</span>
+    <span><i style="background:transparent;border:2px solid #ffd60a"></i>нужно что-то уточнить</span>
+    <span>Нажми на свободную дату, чтобы добавить свадьбу</span>
+  </div>
+  <h2>Все свадьбы года</h2>
+  <div class="list" id="list"></div>
+  <div class="tools">
+    <button class="btn" id="bExport">⬇︎ Копия данных</button>
+    <button class="btn" id="bImport">⬆︎ Перенести свадьбы</button>
+  </div>
+  <div class="foot">Календарь видеографа · твои записи видишь только ты · сделано Сашей Вжух</div>
+</div>
+
+<div class="veil" id="veil"><div class="sheet" id="sheet"></div></div>
+
+<script>
+/* ---- Хранилище: облако Telegram (у каждого пользователя своё), вне Telegram — память браузера ---- */
+(function(){
+  const TG=window.Telegram&&Telegram.WebApp; const inTG=!!(TG&&TG.initData);
+  const CS=inTG&&TG.isVersionAtLeast&&TG.isVersionAtLeast("6.9")?TG.CloudStorage:null;
+  if(TG){try{TG.ready();TG.expand();TG.setHeaderColor&&TG.setHeaderColor("#0b0b0d");TG.setBackgroundColor&&TG.setBackgroundColor("#0b0b0d")}catch(e){}}
+  const P="w_";
+  const cs={
+    keys:()=>new Promise((res,rej)=>CS.getKeys((e,k)=>e?rej(e):res(k||[]))),
+    getMany:ks=>new Promise((res,rej)=>CS.getItems(ks,(e,v)=>e?rej(e):res(v||{}))),
+    set:(k,v)=>new Promise((res,rej)=>CS.setItem(k,v,(e,ok)=>e||!ok?rej(e||"fail"):res())),
+    del:k=>new Promise((res,rej)=>CS.removeItem(k,(e)=>e?rej(e):res()))
+  };
+  const ls={
+    keys:async()=>{try{return Object.keys(localStorage).filter(k=>k.startsWith(P))}catch(e){return[]}},
+    getMany:async ks=>{const o={};ks.forEach(k=>{try{o[k]=localStorage.getItem(k)}catch(e){}});return o},
+    set:async(k,v)=>{localStorage.setItem(k,v)},
+    del:async k=>{localStorage.removeItem(k)}
+  };
+  const S=CS?cs:ls; let listeners=[]; let cache={};
+  async function loadAll(){
+    const ks=(await S.keys()).filter(k=>k.startsWith(P)); const out={};
+    for(let i=0;i<ks.length;i+=100){Object.assign(out,await S.getMany(ks.slice(i,i+100)))}
+    cache={}; for(const k in out){try{if(out[k])cache[k.slice(P.length)]=JSON.parse(out[k])}catch(e){}}
+    emit();
+  }
+  function emit(){const docs=Object.keys(cache).sort().map(id=>({id,exists:true,data:()=>cache[id]}));listeners.forEach(cb=>cb({docs,metadata:{fromCache:false}}))}
+  const safe=id=>id.replace(/[^A-Za-z0-9_-]/g,"_");
+  const db={collection:()=>({
+    onSnapshot(cb,err){listeners.push(cb);loadAll().catch(e=>err&&err({code:"unavailable"}));return()=>{listeners=listeners.filter(x=>x!==cb)}},
+    doc:id=>({
+      set:async o=>{const v=JSON.stringify(o);if(v.length>4000)throw{code:"invalid_argument",message:"too long"};await S.set(P+safe(id),v);cache[safe(id)]=o},
+      delete:async()=>{await S.del(P+safe(id));delete cache[safe(id)]}
+    })
+  })};
+  window.__STORE__={inTG,cloud:!!CS,db,reload:loadAll,all:()=>cache};
+  window.claude={use:async n=>n==="db"?db:(n==="user"?{can:async()=>true}:null)};
+})();
+</script>
+<script>
+const MONTHS=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const MONTHS_GEN=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const MC=["#64d2ff","#e040fb","#5e5ce6","#30d158","#0a84ff","#ff9f0a","#ff375f","#40c8b0","#bf5af2","#ff6b3d","#ffd60a","#a2845e"];
+const WD=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+const FIELDS=[["couple","Пара"],["organizer","Организатор"],["venue","Площадка"],["photographer","Фотограф"],["host","Ведущий"],["package","Пакет"]];
+
+let year=(()=>{const t=new Date();return t.getMonth()>=9?t.getFullYear()+1:t.getFullYear()})(), data={}, db=null, canWrite=true;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const key=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
+const money=n=>(n===0||n)&&n!=="" ? Number(n).toLocaleString("ru-RU")+" ₽" : "—";
+const num=v=>{const t=String(v??"").trim();return t===""?null:Number(t.replace(/[^\d]/g,""))};
+const isIncomplete=w=>!w.couple||w.couple.trim().endsWith(" и")||!w.venue;
+const dateOf=(id,w)=>(w&&w.date)||id.slice(0,10);
+const wref=id=>db.collection("weddings").doc(id);
+const STAGES=[["planned","Запланирована"],["shot","Снято"],["reels","Рилсы сданы"],["editing","Клип/фильм в монтаже"],["done","Всё сдано"]];
+const STAGE_COLOR={planned:"#8e8e93",shot:"#64d2ff",reels:"#bf5af2",editing:"#ff9f0a",done:"#30d158"};
+const todayKey=()=>{const t=new Date();return key(t.getFullYear(),t.getMonth(),t.getDate())};
+const addDays=(k,n)=>{const [y,m,d]=k.split("-").map(Number);const t=new Date(y,m-1,d+n);return key(t.getFullYear(),t.getMonth(),t.getDate())};
+const daysBetween=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+const isPkg12=w=>/(№|#|номер|пакет)\s*[12](?!\d)/i.test(w.package||"");
+const hasReels=w=>/рилс|reels/i.test(w.deliverables||"")||/контент/i.test(w.package||"")||isPkg12(w);
+const addMonths=(k,n)=>{const [y,m,d]=k.split("-").map(Number);const t=new Date(y,m-1+n,d);return key(t.getFullYear(),t.getMonth(),t.getDate())};
+const fmtFull=k=>{const [y,m,d]=k.split("-");return `${d}.${m}.${y}`};
+const finalMonths=w=>+w.finalMonths||(isPkg12(w)?8:0);
+function finalInfo(id){
+  const w=data[id], k=dateOf(id,w), n=finalMonths(w);
+  if(!n)return null;
+  const done=!!w.finalDone||w.stage==="done";
+  const due=addMonths(k,n), left=daysBetween(todayKey(),due);
+  if(done) return {done,cls:"",due,text:`Клип/фильм сдан (срок был до ${fmtFull(due)})`};
+  if(left<0) return {done,cls:"late",due,text:`Клип/фильм просрочен — срок был ${fmtFull(due)}`};
+  return {done,cls:k>todayKey()?"":(left<=30?"soon":"ok"),due,text:`Клип/фильм сдать до ${fmtFull(due)} (${n} мес. после свадьбы)${k<=todayKey()?` — осталось ${left} дн.`:""}`};
+}
+function stageOf(id){const w=data[id];return w.stage||(dateOf(id,w)<todayKey()?"shot":"planned")}
+function reelsInfo(id){
+  const w=data[id], k=dateOf(id,w);
+  if(!hasReels(w))return null;
+  const done=!!w.reelsDone||["reels","editing","done"].includes(w.stage);
+  const nd=+w.reelsDays||7, due=addDays(k,nd), left=daysBetween(todayKey(),due);
+  if(done) return {done,cls:"",text:`Рилсы сданы (срок был до ${fmtShort(due)})`,left,due};
+  if(k>todayKey()) return {done,cls:"",text:`Рилсы сдать до ${fmtShort(due)} (${nd} дней после свадьбы)`,left,due};
+  if(left<0) return {done,cls:"late",text:`Рилсы просрочены на ${-left} дн. — срок был ${fmtShort(due)}`,left,due};
+  return {done,cls:left<=2?"soon":"ok",text:left===0?`Рилсы сдать сегодня!`:`Рилсы сдать до ${fmtShort(due)} — осталось ${left} дн.`,left,due};
+}
+function human(k){const [y,m,d]=k.split("-").map(Number);return `${d} ${MONTHS_GEN[m-1]} ${y}`}
+function fmtShort(k){const [y,m,d]=k.split("-");return `${d}.${m}`}
+function color(k){return MC[+k.slice(5,7)-1]}
+function plural(n){const a=n%10,b=n%100;return a===1&&b!==11?"свадьба":a>=2&&a<=4&&(b<10||b>=20)?"свадьбы":"свадеб"}
+function byDate(){const o={};for(const id in data){const d=dateOf(id,data[id]);(o[d]=o[d]||[]).push(id)}for(const d in o)o[d].sort();return o}
+function yearIds(){return Object.keys(data).filter(id=>dateOf(id,data[id]).startsWith(year+"-")).sort((a,b)=>dateOf(a,data[a]).localeCompare(dateOf(b,data[b]))||a.localeCompare(b))}
+
+function render(){
+  $("title").textContent="Свадьбы "+year;
+  const today=new Date(); const tk=key(today.getFullYear(),today.getMonth(),today.getDate());
+  const bd=byDate(), ids=yearIds();
+  let html="";
+  for(let m=0;m<12;m++){
+    const first=(new Date(year,m,1).getDay()+6)%7, days=new Date(year,m+1,0).getDate();
+    const cnt=ids.filter(id=>+dateOf(id,data[id]).slice(5,7)===m+1).length;
+    html+=`<div class="month" style="--mc:${MC[m]}"><div class="mhead"><span class="mname" style="color:${MC[m]};background:${MC[m]}22">${MONTHS[m]}</span><span class="mcount">${cnt?cnt+" "+plural(cnt):""}</span></div><div class="grid">`;
+    html+=WD.map(w=>`<div class="wd">${w}</div>`).join("");
+    for(let i=0;i<first;i++) html+="<div></div>";
+    for(let d=1;d<=days;d++){
+      const k=key(year,m,d), list=bd[k]||[], dow=(first+d-1)%7;
+      const cls=["d"]; if(dow>=5)cls.push("we"); if(k===tk)cls.push("today");
+      if(list.length){cls.push("busy"); if(list.some(id=>isIncomplete(data[id])))cls.push("incomplete"); if(list.some(id=>data[id].todo))cls.push("todo"); if(list.every(id=>stageOf(id)==="done"))cls.push("done")}
+      const tt=list.map(id=>data[id].couple||"Занято").join(" / ");
+      html+=`<div class="${cls.join(" ")}" data-k="${k}" title="${esc(tt)}">${d}${list.length>1?`<span class="cnt">×${list.length}</span>`:""}</div>`;
+    }
+    html+="</div></div>";
+  }
+  $("months").innerHTML=html;
+  const byM={}; ids.forEach(id=>{const m=+dateOf(id,data[id]).slice(5,7)-1;(byM[m]=byM[m]||[]).push(id)});
+  const rowHtml=id=>{const w=data[id],k=dateOf(id,w),m=+k.slice(5,7)-1;
+    return `<div class="row" style="--mc:${MC[m]}" data-k="${k}"><div class="dt">${fmtShort(k)}</div><div class="who">${esc(w.couple||"Пара не указана")}${w.label?`<span class="label">${esc(w.label)}</span>`:""}${w.todo?`<span class="flag">● уточнить</span>`:""}${w.paid?`<span class="pd">✓ оплачено</span>`:""}<small>${esc([w.venue,w.organizer].filter(Boolean).join(" · ")||"—")}</small></div></div>`};
+  $("list").innerHTML=ids.length?Object.keys(byM).map(Number).sort((a,b)=>a-b).map(m=>`<div class="lmonth"><h3 style="color:${MC[m]};background:${MC[m]}22">${MONTHS[m]}<span>${byM[m].length} ${plural(byM[m].length)}</span></h3><div class="list2">${byM[m].map(rowHtml).join("")}</div></div>`).join("")
+    :`<div class="empty">В ${year} году пока нет свадеб. Нажми на дату в календаре, чтобы добавить.</div>`;
+  const ws=ids.map(id=>data[id]);
+  $("sCount").textContent=ws.length;
+  $("sBal").textContent=money(ws.reduce((s,w)=>s+(w.paid?0:(+w.balance||0)),0));
+  $("sPre").textContent=money(ws.reduce((s,w)=>s+(+w.prepay||0)+(w.paid?(+w.balance||0):0),0));
+  renderQuick();
+}
+
+document.addEventListener("click",e=>{
+  if(e.target.closest(".sheet")||e.target.closest(".quick"))return;
+  const el=e.target.closest("[data-k]"); if(el)openDay(el.dataset.k);
+});
+$("veil").addEventListener("click",e=>{if(e.target.id==="veil")closeSheet()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
+$("prev").onclick=()=>{quickEditing=false;year--;render()}; $("next").onclick=()=>{quickEditing=false;year++;render()};
+function closeSheet(){$("veil").classList.remove("open")}
+function openDay(k){ (byDate()[k]||[]).length?view(k):edit(null,k); $("veil").classList.add("open"); $("sheet").scrollTop=0 }
+function newId(k){ if(!data[k])return k; let i=2; while(data[k+"_"+i])i++; return k+"_"+i }
+
+function card(id){
+  const w=data[id], k=dateOf(id,w), c=color(k);
+  const tags=String(w.deliverables||"").split(/[,;]+/).map(s=>s.trim()).filter(Boolean);
+  const warn=[]; if(!w.couple||w.couple.trim().endsWith(" и"))warn.push("имя пары"); if(!w.venue)warn.push("площадка"); if(!w.photographer)warn.push("фотограф");
+  return `<div class="wcard">
+   <h4><span class="plabel">Пара:</span>${esc(w.couple||"не указана")}${w.label?`<span class="label">${esc(w.label)}</span>`:""}</h4>
+   ${w.todo?`<div class="todo-box"><b>Уточнить</b>${esc(w.todo)}${canWrite?`<button class="btn tododone" data-done="${esc(id)}">✓ Уточнено — убрать пометку</button>`:""}</div>`:""}
+   ${warn.length?`<div class="warn">Не заполнено: ${warn.join(", ")}</div>`:""}
+   <div class="stages">${STAGES.map(([v,l])=>`<button class="stg ${stageOf(id)===v?"on":""}" ${stageOf(id)===v?`style="background:${STAGE_COLOR[v]}"`:""} ${canWrite?`data-stage="${v}" data-sid="${esc(id)}"`:"disabled"}>${l}</button>`).join("")}</div>
+   <div class="checks">${[["reels",reelsInfo(id),"⏱"],["final",finalInfo(id),"🎬"]].filter(x=>x[1]).map(([t,r,ic])=>`<div class="chk ${r.done?"on":""}" ${canWrite?`data-chk="${t}" data-cid="${esc(id)}"`:""}><span class="circ">✓</span><span class="${r.cls==="late"?"late":""}">${ic} ${r.text}</span></div>`).join("")}</div>
+   <div class="fields">${FIELDS.slice(1,5).map(([f,l])=>`<div class="f"><span>${f==="organizer"&&w.orgRole==="coordinator"?"Координатор":l}</span><b class="${w[f]?"":"none"}">${esc(w[f]||"не указано")}</b></div>`).join("")}
+    <div class="f"><span>Пакет</span><b class="${w.package?"":"none"}">${esc(w.package||"не указано")}</b></div>
+   </div>
+   <div class="fields givebox"><div class="f pkg"><span>Нужно отдать</span>${tags.length?`<div class="tags">${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:`<b class="none" style="text-align:left">не указано</b>`}</div></div>
+   <div class="money"><div><b>${money(w.prepay)}</b><span>предоплата</span></div><div><b>${money(w.balance)}</b><span>остаток</span></div><div><b>${money(w.agency)}</b><span>агентские</span></div></div>
+   <div class="chk ${w.paid?"on":""}" ${canWrite?`data-chk="paid" data-cid="${esc(id)}"`:""}><span class="circ">✓</span><span>${w.paid?`Оплачено полностью${w.paidDate?" · "+fmtFull(w.paidDate):""}`:`Остаток получен — оплачено полностью`}</span></div>
+   ${w.notes?`<div class="note">${esc(w.notes)}</div>`:""}
+   ${canWrite?`<div class="actions"><button class="btn danger" data-del="${esc(id)}">Удалить свадьбу</button><button class="btn primary" data-ed="${esc(id)}" style="background:${c}">Редактировать</button></div>`:""}
+  </div>`;
+}
+function view(k){
+  const ids=byDate()[k]||[]; if(!ids.length){closeSheet();return}
+  const c=color(k);
+  $("sheet").innerHTML=`
+   <div class="shead"><div><span class="sdate" style="color:${c};background:${c}22">${human(k)}</span>${ids.length>1?`<div class="stitle">${ids.length} ${plural(ids.length)} в этот день</div>`:""}</div><button class="x" onclick="closeSheet()">✕</button></div>
+   ${ids.map(card).join("")}
+   ${canWrite?`<button class="btn addmore" id="addmore">+ Ещё одна свадьба в этот день</button>`:""}
+   <div class="err" id="err"></div>`;
+  $("sheet").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>edit(b.dataset.ed,k));
+  $("sheet").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    if(b.dataset.armed){remove(b.dataset.del,k);return}
+    b.dataset.armed="1";b.textContent="Удалить всю свадьбу?";setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent="Удалить свадьбу"}},4000);
+  });
+  const am=$("addmore"); if(am)am.onclick=()=>edit(null,k);
+  const patch=async(id,fn,b)=>{const o={...data[id]};fn(o);if(b)b.disabled=true;
+    try{await wref(id).set(o);data[id]=o;render();view(k)}catch(e){if(b)b.disabled=false;handleWriteErr(e)}};
+  $("sheet").querySelectorAll("[data-stage]").forEach(b=>b.onclick=()=>patch(b.dataset.sid,o=>{const v=b.dataset.stage;o.stage=v;
+    if(["reels","editing","done"].includes(v))o.reelsDone=true; else delete o.reelsDone;
+    if(v==="done")o.finalDone=true; else delete o.finalDone;},b));
+  $("sheet").querySelectorAll("[data-chk]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.cid, t=b.dataset.chk, on=b.classList.contains("on"); b.classList.add("busy");
+    patch(id,o=>{
+      if(t==="paid"){ if(on){delete o.paid;delete o.paidDate}else{o.paid=true;o.paidDate=todayKey()} }
+      if(t==="reels"){ if(on){delete o.reelsDone; if(["reels","editing","done"].includes(o.stage))o.stage="shot"} else {o.reelsDone=true; if(!o.stage||o.stage==="planned"||o.stage==="shot")o.stage="reels"} }
+      if(t==="final"){ if(on){delete o.finalDone; if(o.stage==="done")o.stage="editing"} else {o.finalDone=true; o.stage="done"} }
+    });
+  });
+  $("sheet").querySelectorAll("[data-done]").forEach(b=>b.onclick=async()=>{
+    const id=b.dataset.done, o={...data[id]}; delete o.todo; b.disabled=true;
+    try{ await db.collection("weddings").doc(id).set(o); data[id]=o; render(); view(k) }catch(e){ b.disabled=false; handleWriteErr(e) }
+  });
+}
+
+function edit(id,k){
+  const w=(id&&data[id])||{}, c=color(k), isNew=!id;
+  const hasOthers=(byDate()[k]||[]).length>0;
+  if(!canWrite){ $("sheet").innerHTML=`<div class="shead"><div><span class="sdate" style="color:${c};background:${c}22">${human(k)}</span><div class="stitle">Дата свободна</div></div><button class="x" onclick="closeSheet()">✕</button></div>`; return }
+  const inp=(f,l,ph="")=>`<label>${l}</label><input name="${f}" value="${esc(w[f]??"")}" placeholder="${ph}">`;
+  $("sheet").innerHTML=`
+   <div class="shead"><div><span class="sdate" style="color:${c};background:${c}22">${human(k)}</span><div class="stitle">${isNew?"Новая свадьба":"Редактирование"}</div></div><button class="x" type="button" onclick="closeSheet()">✕</button></div>
+   <form id="frm" autocomplete="off">
+    ${inp("couple","Пара","Имя и имя")}
+    ${inp("label","Метка","например: Мише отдать, Infinity")}
+    <label>Уточнить потом</label><textarea name="todo" style="min-height:60px" placeholder="например: пакет не выбран, остаток пересчитать">${esc(w.todo||"")}</textarea><div class="hint">Дата получит жёлтую обводку, пока поле не пустое</div>
+    <div class="seg" id="seg"><button type="button" data-role="organizer" class="${w.orgRole!=="coordinator"?"on":""}">Организатор</button><button type="button" data-role="coordinator" class="${w.orgRole==="coordinator"?"on":""}">Координатор</button></div>
+    <input type="hidden" name="orgRole" value="${w.orgRole==="coordinator"?"coordinator":""}">
+    <input name="organizer" value="${esc(w.organizer??"")}" placeholder="Имя">
+    ${inp("venue","Площадка")}
+    <div class="two"><div>${inp("photographer","Фотограф")}</div><div>${inp("host","Ведущий")}</div></div>
+    ${inp("package","Пакет","Пакет №1 / Контент")}
+    ${inp("deliverables","Что нужно отдать","рилс, клип, фильм…")}<div class="hint">Через запятую — каждое станет отдельной меткой</div>
+    <div class="two"><div><label>Рилсы — дней после свадьбы</label><input name="reelsDays" inputmode="numeric" value="${w.reelsDays??""}" placeholder="7"></div><div><label>Клип/фильм — месяцев</label><input name="finalMonths" inputmode="numeric" value="${w.finalMonths??""}" placeholder="${isPkg12(w)?"8":"—"}"></div></div><div class="hint">Пусто = по умолчанию: рилсы 7 дней, клип/фильм 8 месяцев для пакетов №1 и №2</div>
+    <div class="three"><div><label>Предоплата</label><input name="prepay" inputmode="numeric" value="${w.prepay??""}"></div><div><label>Остаток</label><input name="balance" inputmode="numeric" value="${w.balance??""}"></div><div><label>Агентские</label><input name="agency" inputmode="numeric" value="${w.agency??""}"></div></div>
+    <label>Заметки</label><textarea name="notes">${esc(w.notes||"")}</textarea>
+    <div class="actions">${(!isNew||hasOthers)?`<button type="button" class="btn" id="cancel">Отмена</button>`:""}<button class="btn primary" id="save" style="background:${c}">Сохранить</button></div>
+    <div class="err" id="err"></div>
+   </form>`;
+  const cb=$("cancel"); if(cb)cb.onclick=()=>view(k);
+  $("seg").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("seg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));$("frm").querySelector("[name=orgRole]").value=b.dataset.role==="coordinator"?"coordinator":""});
+  $("frm").onsubmit=async e=>{
+    e.preventDefault();
+    const fd=new FormData(e.target), o={date:k};
+    for(const f of ["stage","paid","paidDate","reelsDone","finalDone"]) if(w[f]!=null) o[f]=w[f];
+    for(const f of ["couple","label","todo","orgRole","organizer","venue","photographer","host","package","deliverables","notes"]){const v=String(fd.get(f)||"").trim(); if(v)o[f]=v}
+    for(const f of ["prepay","balance","agency","reelsDays","finalMonths"]){const n=num(fd.get(f)); if(n!==null)o[f]=n}
+    await save(id||newId(k),o,k);
+  };
+}
+
+async function save(id,o,k){
+  const btn=$("save"); if(btn)btn.disabled=true;
+  if(!db){ $("err").textContent="Нет связи с хранилищем — изменения не сохранятся."; if(btn)btn.disabled=false; return }
+  try{ await db.collection("weddings").doc(id).set(o); data[id]=o; render(); view(k) }
+  catch(e){ handleWriteErr(e); if(btn)btn.disabled=false }
+}
+async function remove(id,k){
+  if(!db)return;
+  try{ await db.collection("weddings").doc(id).delete(); delete data[id]; render(); view(k) }
+  catch(e){ handleWriteErr(e) }
+}
+function handleWriteErr(e){
+  const el=$("err"); if(!el)return;
+  if(e&&e.code==="invalid_argument"){canWrite=false; el.textContent="У этого аккаунта нет прав на изменения."}
+  else el.textContent="Не удалось сохранить, попробуй ещё раз.";
+}
+
+// ---------- быстрый список дат ----------
+const MONTH_RX=[/^янв/,/^фев/,/^мар/,/^апр/,/^ма[йя]/,/^июн/,/^июл/,/^авг/,/^сен/,/^окт/,/^ноя/,/^дек/];
+let quickEditing=false, pendingRemove=null;
+function yearDatesByMonth(){const by={};Object.keys(byDate()).filter(k=>k.startsWith(year+"-")).sort().forEach(k=>{const m=+k.slice(5,7)-1;(by[m]=by[m]||[]).push(+k.slice(8))});return by}
+function quickText(){const by=yearDatesByMonth();return Object.keys(by).map(Number).sort((a,b)=>a-b).map(m=>`${MONTHS[m]}: ${by[m].join(",")}`).join("\n")}
+function renderQuick(msg,cls){
+  if(quickEditing)return;
+  const by=yearDatesByMonth();
+  const lines=Object.keys(by).map(Number).sort((a,b)=>a-b).map(m=>`<div class="qline"><b style="color:${MC[m]}">${MONTHS[m]}:</b> ${by[m].join(", ")}</div>`).join("");
+  $("quick").innerHTML=`<div class="qhead"><h3>СВАДЬБЫ ${year}</h3>${canWrite?'<button class="qbtn" id="qedit">✎ Изменить</button>':""}</div>
+    ${lines||'<div class="qempty">Пока нет занятых дат. Нажми «Изменить» и впиши, например: Июнь: 5, 11, 12</div>'}
+    ${(()=>{const t=Object.keys(data).filter(id=>dateOf(id,data[id])<=todayKey()&&stageOf(id)!=="done").sort((x,y)=>dateOf(x,data[x]).localeCompare(dateOf(y,data[y])));
+      if(!t.length)return "";
+      return `<div class="work"><h5>В работе (${t.length})</h5>${t.map(id=>{const w=data[id],k=dateOf(id,w),r=reelsInfo(id),st=STAGES.find(x=>x[0]===stageOf(id))[1];
+        return `<div class="work-row" data-open="${k}"><span class="dt" style="color:${color(k)}">${fmtShort(k)}</span><span>${esc(w.couple||"Без имени")} <span class="st">· ${st}</span>${r&&!r.done?` <span class="${r.cls}">· ${r.left<0?"рилсы просрочены":"рилсы до "+fmtShort(addDays(k,+w.reelsDays||7))}</span>`:(()=>{const fi=finalInfo(id);return fi&&!fi.done?` <span class="${fi.cls}">· ${fi.cls==="late"?"клип/фильм просрочен":"клип/фильм до "+fmtFull(fi.due)}</span>`:""})()}</span></div>`}).join("")}</div>`})()}
+    ${(()=>{const t=yearIds().filter(id=>data[id].todo);return t.length?`<div class="todos"><h5>Уточнить (${t.length})</h5>${t.map(id=>{const k=dateOf(id,data[id]);return `<div class="todo-row" data-open="${k}"><span class="dt" style="color:${color(k)}">${fmtShort(k)}</span><span>${esc(data[id].couple?data[id].couple+" — ":"")}${esc(data[id].todo)}</span></div>`}).join("")}</div>`:""})()}
+    ${msg?`<div class="qmsg ${cls||""}">${msg}</div>`:""}`;
+  const b=$("qedit"); if(b)b.onclick=startQuickEdit;
+  $("quick").querySelectorAll("[data-open]").forEach(r=>r.onclick=()=>openDay(r.dataset.open));
+}
+function startQuickEdit(){
+  quickEditing=true; pendingRemove=null;
+  $("quick").innerHTML=`<div class="qhead"><h3>СВАДЬБЫ ${year}</h3></div>
+    <textarea id="qta" spellcheck="false" placeholder="Февраль: 27&#10;Май: 19&#10;Июнь: 5,11,12">${esc(quickText())}</textarea>
+    <div class="qhint">Каждый месяц с новой строки: «Месяц: числа через запятую». Новые даты появятся в календаре, подробности заполнишь в карточке.</div>
+    <div class="qactions"><button class="btn" id="qcancel">Отмена</button><button class="btn primary" id="qsave">Сохранить</button></div>
+    <div id="qmsg"></div>`;
+  $("qcancel").onclick=()=>{quickEditing=false;renderQuick()};
+  $("qsave").onclick=saveQuick;
+  const t=$("qta"); t.focus(); t.setSelectionRange(t.value.length,t.value.length);
+}
+function parseQuick(txt){
+  const set=new Set(), errs=[];
+  txt.split(/\n+/).map(l=>l.trim()).filter(Boolean).forEach(l=>{
+    const i=l.indexOf(":"); const name=(i>=0?l.slice(0,i):l).trim().toLowerCase();
+    const m=MONTH_RX.findIndex(r=>r.test(name));
+    if(m<0){errs.push(`не понял месяц в строке «${l}»`);return}
+    const nums=(i>=0?l.slice(i+1):"").match(/\d+/g)||[];
+    const max=new Date(year,m+1,0).getDate();
+    nums.forEach(n=>{n=+n; if(n<1||n>max)errs.push(`${n} ${MONTHS_GEN[m]} — такой даты нет`); else set.add(key(year,m,n))});
+  });
+  return {set,errs};
+}
+function hasDetails(w){return w&&Object.keys(w).some(f=>f!=="date"&&w[f]!==""&&w[f]!=null)}
+async function saveQuick(){
+  const box=$("qmsg"), btn=$("qsave");
+  const {set,errs}=parseQuick($("qta").value);
+  if(errs.length){box.className="qmsg bad";box.innerHTML=errs.map(esc).join("<br>");return}
+  if(!db){box.className="qmsg bad";box.textContent="Нет связи с хранилищем — изменения не сохранятся.";return}
+  const bd=byDate();
+  const cur=Object.keys(bd).filter(k=>k.startsWith(year+"-"));
+  const toAdd=[...set].filter(k=>!bd[k]);
+  const toRemove=cur.filter(k=>!set.has(k));
+  const risky=toRemove.filter(k=>bd[k].some(id=>hasDetails(data[id])));
+  if(risky.length&&pendingRemove!==risky.join()){
+    pendingRemove=risky.join();
+    box.className="qmsg ask";
+    box.innerHTML=`Ты убрал даты, у которых заполнены данные: <b>${risky.map(k=>fmtShort(k)+" ("+bd[k].map(id=>esc(data[id].couple||"без имени")).join(", ")+")").join("; ")}</b>. Вся информация по ним удалится. Нажми «Сохранить» ещё раз, если всё верно.`;
+    return;
+  }
+  btn.disabled=true; box.className="qmsg"; box.textContent="Сохраняю…";
+  try{
+    for(const k of toAdd){ await db.collection("weddings").doc(k).set({date:k}); data[k]={date:k} }
+    for(const k of toRemove){ for(const id of bd[k]){ await db.collection("weddings").doc(id).delete(); delete data[id] } }
+    quickEditing=false; pendingRemove=null; render();
+    const parts=[]; if(toAdd.length)parts.push("добавлено: "+toAdd.map(fmtShort).join(", ")); if(toRemove.length)parts.push("убрано: "+toRemove.map(fmtShort).join(", "));
+    renderQuick(parts.length?"Готово — "+parts.join("; "):"Изменений нет","ok");
+  }catch(e){
+    btn.disabled=false; box.className="qmsg bad";
+    box.textContent=e&&e.code==="invalid_argument"?"У этого аккаунта нет прав на изменения.":"Не удалось сохранить, попробуй ещё раз.";
+  }
+}
+
+document.querySelectorAll("[data-secret]").forEach(el=>el.addEventListener("click",()=>{
+  const hide=!el.classList.contains("hidden");
+  document.querySelectorAll("[data-secret]").forEach(x=>x.classList.toggle("hidden",hide));
+}));
+
+// ---------- копия / перенос ----------
+function ioSheet(html){$("sheet").innerHTML=`<div class="shead"><div><div class="stitle">${html.title}</div></div><button class="x" onclick="closeSheet()">✕</button></div><div class="io">${html.body}</div>`;$("veil").classList.add("open")}
+$("bExport").onclick=()=>{
+  const rows=Object.keys(data).sort().map(id=>({id,data:data[id]}));
+  const txt=JSON.stringify({app:"videograf_kalendar",exported:todayKey(),weddings:rows});
+  ioSheet({title:"Копия данных",body:`<p>Здесь все твои свадьбы (${rows.length}). Скопируй текст и сохрани, например, в «Избранное» в Telegram — по нему можно всё восстановить через «Перенести свадьбы».</p><textarea readonly id="ioT">${esc(txt)}</textarea><div class="actions"><button class="btn primary" id="ioCopy">Скопировать</button></div><div class="err" id="err"></div>`});
+  $("ioCopy").onclick=async()=>{try{await navigator.clipboard.writeText(txt);$("err").style.color="#30d158";$("err").textContent="Скопировано ✓"}catch(e){const t=$("ioT");t.focus();t.select();$("err").textContent="Выдели текст и скопируй вручную"}};
+};
+$("bImport").onclick=()=>{
+  ioSheet({title:"Перенести свадьбы",body:`<p>Вставь текст копии (или содержимое файла <b>.json</b> из резервной копии) — свадьбы добавятся в календарь. Свадьбы с теми же датами заменятся.</p><input type="file" id="ioF" accept=".json,application/json,text/plain" style="margin-bottom:10px;color:var(--muted)"><textarea id="ioT" placeholder="Вставь сюда текст копии"></textarea><div class="actions"><button class="btn primary" id="ioGo">Перенести</button></div><div class="err" id="err"></div>`});
+  $("ioF").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("ioT").value=r.result};r.readAsText(f)};
+  $("ioGo").onclick=async()=>{
+    const er=$("err"); let rows;
+    try{const j=JSON.parse($("ioT").value);rows=Array.isArray(j)?j:j.weddings;if(!Array.isArray(rows))throw 0}catch(e){er.textContent="Не похоже на копию календаря";return}
+    $("ioGo").disabled=true; let n=0;
+    try{for(const r of rows){if(!r||!r.data||!r.data.date)continue;await db.collection("weddings").doc(r.id||r.data.date).set(r.data);data[r.id||r.data.date]=r.data;n++;er.style.color="var(--muted)";er.textContent=`Переношу… ${n}/${rows.length}`}
+      render();er.style.color="#30d158";er.textContent=`Готово — перенесено свадеб: ${n}`;}
+    catch(e){er.style.color="";er.textContent=`Ошибка после ${n} свадеб. Попробуй ещё раз.`;$("ioGo").disabled=false}
+  };
+};
+
+render();
+(async()=>{
+  try{
+    db=await claude.use("db");
+    const user=await claude.use("user");
+    if(user&&user.can){ try{const c=await user.can("data.write"); if(c===false){canWrite=false;render()}}catch(_){} }
+  }catch(_){db=null}
+  if(window.__STORE__&&!window.__STORE__.inTG)$("tgnote").hidden=false;
+  if(!db){$("status").textContent="Не удалось открыть хранилище."; return}
+  let loaded=false;
+  const t=setTimeout(()=>{if(!loaded)$("status").textContent="Не получается загрузить данные, проверь интернет…"},10000);
+  db.collection("weddings").onSnapshot(snap=>{
+    const nd={}; snap.docs.forEach(d=>{if(d.exists)nd[d.id]=d.data()}); data=nd;
+    if(!snap.metadata.fromCache){loaded=true;clearTimeout(t);$("status").textContent=""}
+    render();
+    if($("veil").classList.contains("open")&&!$("frm")){const sd=$("sheet").querySelector(".sdate");}
+  },err=>{loaded=true;clearTimeout(t);$("status").textContent="Ошибка загрузки данных."});
+})();
+</script>
+</body>
+</html>
