@@ -171,6 +171,20 @@
   .stat b{white-space:nowrap!important;letter-spacing:-.4px!important;display:block}
   .stat.secret span::after{content:" · нажми"!important}
   .stat.secret:not(.hidden) span::after{content:""!important}
+  .d.busy.content{background:transparent!important;color:var(--mc)!important;border:2.5px solid var(--mc)}
+  .kchip{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:7px;margin-left:6px;vertical-align:2px;border:1.5px solid currentColor;color:#bf5af2;font-family:'Golos Text',system-ui,sans-serif;letter-spacing:0}
+  .qline .ct{font-size:.8em;margin-left:1px}
+  .stat .split{display:block;font-size:11px;color:var(--muted);margin-top:4px;line-height:1.35;white-space:nowrap}
+  .stat .split::after{content:none!important}
+  .seg.kind button.on{background:#bf5af2;color:#111}
+  .seg.kind button.on[data-k="video"]{background:var(--text)}
+  .viewbar{flex-direction:column;align-items:center;gap:10px!important;margin:0 0 16px!important}
+  .viewbar .segs{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+  .viewbar .seg2{width:260px;max-width:100%}
+  .viewbar .seg2 button{flex:1}
+  @media (min-width:600px){.viewbar .segs{flex-direction:row;justify-content:center}}
+  .pkbtn{background:#2a2a31!important;border:1px solid #3a3a43!important;color:#f2f2f4!important;border-radius:999px!important;padding:11px 22px!important;font-size:14px!important}
+  .pkbtn:active{background:#34343c!important}
   /* sheet */
   .veil{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;z-index:10}
   .veil.open{display:flex}
@@ -237,14 +251,17 @@
     <div class="stat secret hidden" data-secret><b id="sPre">—</b><span>получено</span></div>
   </div>
   <div class="viewbar">
-    <div class="seg2" id="vMode"><button data-v="cal">Календарь</button><button data-v="list">Список</button></div>
-    <div class="seg2" id="vSeason"><button data-s="season">Только сезон</button><button data-s="all">Весь год</button></div>
     <button class="pkbtn" id="bSettings">⚙︎ Мои пакеты</button>
+    <div class="segs">
+      <div class="seg2" id="vMode"><button data-v="cal">Календарь</button><button data-v="list">Список</button></div>
+      <div class="seg2" id="vSeason"><button data-s="season">Только сезон</button><button data-s="all">Весь год</button></div>
+    </div>
   </div>
   <div class="setup" id="setupBanner" hidden><b>Настрой свои пакеты</b>Укажи, какие у тебя пакеты, через сколько сдаёшь рилсы и клип/фильм — и календарь сам посчитает сроки по каждой свадьбе.<button class="btn primary" id="setupGo">Настроить пакеты</button></div>
   <div class="months" id="months"></div>
   <div class="legend">
-    <span><i style="background:#ff9f0a"></i>занято — нажми, чтобы открыть</span>
+    <span><i style="background:#ff9f0a"></i>залито — видеограф</span>
+    <span><i style="background:transparent;border:2px solid #ff9f0a"></i>обведено — контент</span>
     <span><i style="background:#fff;border-radius:50%;width:8px;height:8px"></i>не все данные заполнены</span>
     <span><i style="background:transparent;border:2px solid #ffd60a"></i>нужно что-то уточнить</span>
     <span>Нажми на свободную дату, чтобы добавить свадьбу</span>
@@ -340,6 +357,8 @@ function pkgOf(w){
     if(n===pn||(n.startsWith(pn)&&!/[0-9a-zа-яё]/i.test(n.charAt(pn.length)))){if(!best||pn.length>normPkg(best.name).length)best=p}}
   return best;
 }
+const kindOf=w=>{if(w.kind==="content"||w.kind==="video")return w.kind;const p=pkgOf(w);return p&&p.kind==="content"?"content":"video"};
+const dateIsContent=k=>{const l=byDate()[k]||[];return l.length>0&&l.every(id=>kindOf(data[id])==="content")};
 const isPkg12=w=>{const p=pkgOf(w);return !!(p&&+p.finalMonths>0)};
 const hasReels=w=>{const p=pkgOf(w);return +w.reelsDays>0||!!(p&&+p.reelsDays>0)};
 const addMonths=(k,n)=>{const [y,m,d]=k.split("-").map(Number);const t=new Date(y,m-1+n,d);return key(t.getFullYear(),t.getMonth(),t.getDate())};
@@ -389,7 +408,7 @@ function render(){
     for(let d=1;d<=days;d++){
       const k=key(year,m,d), list=bd[k]||[], dow=(first+d-1)%7;
       const cls=["d"]; if(dow>=5)cls.push("we"); if(k===tk)cls.push("today");
-      if(list.length){cls.push("busy"); if(list.some(id=>isIncomplete(data[id])))cls.push("incomplete"); if(list.some(id=>data[id].todo))cls.push("todo"); if(list.every(id=>stageOf(id)==="done"))cls.push("done")}
+      if(list.length){cls.push("busy"); if(list.some(id=>isIncomplete(data[id])))cls.push("incomplete"); if(list.some(id=>data[id].todo))cls.push("todo"); if(list.every(id=>kindOf(data[id])==="content"))cls.push("content"); if(list.every(id=>stageOf(id)==="done"))cls.push("done")}
       const tt=list.map(id=>data[id].couple||"Занято").join(" / ");
       html+=`<div class="${cls.join(" ")}" data-k="${k}" title="${esc(tt)}">${d}${list.length>1?`<span class="cnt">×${list.length}</span>`:""}</div>`;
     }
@@ -405,11 +424,13 @@ function render(){
   const lg=document.querySelector(".legend"); if(lg)lg.style.display=viewMode==="list"?"none":"";
   const byM={}; ids.forEach(id=>{const m=+dateOf(id,data[id]).slice(5,7)-1;(byM[m]=byM[m]||[]).push(id)});
   const rowHtml=id=>{const w=data[id],k=dateOf(id,w),m=+k.slice(5,7)-1;
-    return `<div class="row" style="--mc:${MC[m]}" data-k="${k}"><div class="dt">${fmtShort(k)}</div><div class="who">${esc(w.couple||"Пара не указана")}${w.label?`<span class="label">${esc(w.label)}</span>`:""}${w.todo?`<span class="flag">● уточнить</span>`:""}${w.paid?`<span class="pd">✓ оплачено</span>`:""}<small>${esc([w.venue,w.organizer].filter(Boolean).join(" · ")||"—")}</small></div></div>`};
+    return `<div class="row" style="--mc:${MC[m]}" data-k="${k}"><div class="dt">${fmtShort(k)}</div><div class="who">${esc(w.couple||"Пара не указана")}${kindOf(w)==="content"?`<span class="kchip">Контент</span>`:""}${w.label?`<span class="label">${esc(w.label)}</span>`:""}${w.todo?`<span class="flag">● уточнить</span>`:""}${w.paid?`<span class="pd">✓ оплачено</span>`:""}<small>${esc([w.venue,w.organizer].filter(Boolean).join(" · ")||"—")}</small></div></div>`};
   $("list").innerHTML=ids.length?Object.keys(byM).map(Number).sort((a,b)=>a-b).map(m=>`<div class="lmonth"><h3 style="color:${MC[m]};background:${MC[m]}22">${MONTHS[m]}<span>${byM[m].length} ${plural(byM[m].length)}</span></h3><div class="list2">${byM[m].map(rowHtml).join("")}</div></div>`).join("")
     :`<div class="empty-start">В ${year} году пока нет свадеб. Нажми на любую дату в календаре, чтобы добавить первую.${Object.keys(data).length?"":`<button class="btn" onclick="onboarding()">Как это работает?</button>`}</div>`;
   const ws=ids.map(id=>data[id]);
-  $("sCount").textContent=ws.length;
+  { const nc=ids.filter(id=>kindOf(data[id])==="content").length, nv=ids.length-nc;
+    $("sCount").textContent=ws.length;
+    const lab=$("sCount").parentElement.querySelector("span"); lab.innerHTML=plural(ws.length).replace("свадьба","свадьба")+(nc?`<span class="split">🎥 ${nv} · 📱 ${nc}</span>`:""); }
   $("sBal").textContent=money(ws.reduce((s,w)=>s+(w.paid?0:(+w.balance||0)),0));
   $("sPre").textContent=money(ws.reduce((s,w)=>s+(+w.prepay||0)+(w.paid?(+w.balance||0):0),0));
   renderQuick();
@@ -451,7 +472,7 @@ function card(id){
   const tags=String(w.deliverables||"").split(/[,;]+/).map(s=>s.trim()).filter(Boolean);
   const warn=[]; if(!w.couple||w.couple.trim().endsWith(" и"))warn.push("имя пары"); if(!w.venue)warn.push("площадка"); if(!w.photographer)warn.push("фотограф");
   return `<div class="wcard">
-   <h4><span class="plabel">Пара:</span>${esc(w.couple||"не указана")}${w.label?`<span class="label">${esc(w.label)}</span>`:""}</h4>
+   <h4><span class="plabel">Пара:</span>${esc(w.couple||"не указана")}${kindOf(w)==="content"?`<span class="kchip">Контент</span>`:""}${w.label?`<span class="label">${esc(w.label)}</span>`:""}</h4>
    ${w.todo?`<div class="todo-box"><b>Уточнить</b>${esc(w.todo)}${canWrite?`<button class="btn tododone" data-done="${esc(id)}">✓ Уточнено — убрать пометку</button>`:""}</div>`:""}
    ${(()=>{const r=reelsInfo(id),f=finalInfo(id);const giveDue=(r&&!r.done&&r.cls)||(f&&!f.done&&f.cls&&f.cls!=="ok");const payDue=!w.paid&&(+w.balance||0)>0&&dateOf(id,w)<=todayKey();
      return `<div class="tabs" data-tabs="${esc(id)}"><button data-tab="info">Инфо${warn.length?"<i></i>":""}</button><button data-tab="give">Сдача${giveDue?"<i></i>":""}</button><button data-tab="money">Деньги${payDue?"<i></i>":""}</button></div>`})()}
@@ -522,6 +543,10 @@ function edit(id,k){
     ${inp("couple","Пара","Имя и имя")}
     ${inp("label","Метка","например: Мише отдать, Infinity")}
     <label>Уточнить потом</label><textarea name="todo" style="min-height:60px" placeholder="например: пакет не выбран, остаток пересчитать">${esc(w.todo||"")}</textarea><div class="hint">Дата получит жёлтую обводку, пока поле не пустое</div>
+    <label>Кем снимаю</label>
+    <div class="seg kind" id="kseg"><button type="button" data-k="video" class="${kindOf(w)!=="content"?"on":""}">🎥 Видеограф</button><button type="button" data-k="content" class="${kindOf(w)==="content"?"on":""}">📱 Контент-мейкер</button></div>
+    <input type="hidden" name="kind" value="${w.kind||""}">
+    <div class="hint" id="khint">${w.kind?"":"Берётся из пакета — можно поменять для этой свадьбы"}</div>
     <div class="seg" id="seg"><button type="button" data-role="organizer" class="${w.orgRole!=="coordinator"?"on":""}">Организатор</button><button type="button" data-role="coordinator" class="${w.orgRole==="coordinator"?"on":""}">Координатор</button></div>
     <input type="hidden" name="orgRole" value="${w.orgRole==="coordinator"?"coordinator":""}">
     <input name="organizer" value="${esc(w.organizer??"")}" placeholder="Имя">
@@ -538,10 +563,13 @@ function edit(id,k){
     <div class="err" id="err"></div>
    </form>`;
   const cb=$("cancel"); if(cb)cb.onclick=()=>view(k);
+  $("kseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("kseg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));$("frm").querySelector("[name=kind]").value=b.dataset.k;$("khint").textContent="";haptic()});
   const fpk=$("frm").querySelector("[name=package]"), fgive=$("frm").querySelector("[name=deliverables]"), fbal=$("frm").querySelector("[name=balance]"), fpre=$("frm").querySelector("[name=prepay]");
   const pkHint=()=>{const p=pkgOf({package:fpk.value});$("pkghint").textContent=p?`Рилсы — ${+p.reelsDays||7} дн.${+p.finalMonths?`, клип/фильм — ${p.finalMonths} мес.`:""}${p.price?`, цена ${Number(p.price).toLocaleString("ru-RU")} ₽`:""}`:(SETTINGS.packages.length?(fpk.value?"Такого пакета нет в «Мои пакеты» — сроки впиши ниже или добавь пакет":""):"Пакеты ещё не настроены — нажми «⚙︎ Мои пакеты» на главном экране")};
   pkHint();
-  fpk.oninput=()=>{pkHint();const p=pkgOf({package:fpk.value});if(!p)return;
+  fpk.oninput=()=>{pkHint();const p=pkgOf({package:fpk.value});
+    if(!$("frm").querySelector("[name=kind]").value){const kk=p&&p.kind==="content"?"content":"video";$("kseg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.k===kk))}
+    if(!p)return;
     if(!fgive.value.trim()&&p.give)fgive.value=p.give;
     if(!fbal.value.trim()&&+p.price){const pre=num(fpre.value)||0;fbal.value=Math.max(0,+p.price-pre)}};
   tgMode("edit",k,isNew); if(TGW){const sv=$("save");if(sv)sv.classList.add("hide-tg");if(cb)cb.classList.add("hide-tg")}
@@ -550,7 +578,7 @@ function edit(id,k){
     e.preventDefault();
     const fd=new FormData(e.target), o={date:k};
     for(const f of ["stage","paid","paidDate","reelsDone","finalDone"]) if(w[f]!=null) o[f]=w[f];
-    for(const f of ["couple","label","todo","orgRole","organizer","venue","photographer","host","package","deliverables","notes"]){const v=String(fd.get(f)||"").trim(); if(v)o[f]=v}
+    for(const f of ["couple","label","todo","kind","orgRole","organizer","venue","photographer","host","package","deliverables","notes"]){const v=String(fd.get(f)||"").trim(); if(v)o[f]=v}
     for(const f of ["prepay","balance","agency","reelsDays","finalMonths"]){const n=num(fd.get(f)); if(n!==null)o[f]=n}
     await save(id||newId(k),o,k);
   };
@@ -577,11 +605,12 @@ function handleWriteErr(e){
 const MONTH_RX=[/^янв/,/^фев/,/^мар/,/^апр/,/^ма[йя]/,/^июн/,/^июл/,/^авг/,/^сен/,/^окт/,/^ноя/,/^дек/];
 let quickEditing=false, pendingRemove=null;
 function yearDatesByMonth(){const by={};Object.keys(byDate()).filter(k=>k.startsWith(year+"-")).sort().forEach(k=>{const m=+k.slice(5,7)-1;(by[m]=by[m]||[]).push(+k.slice(8))});return by}
+function yearDatesHtml(m,days){return days.map(d=>dateIsContent(key(year,m,d))?`${d}<span class="ct">📱</span>`:d).join(", ")}
 function quickText(){const by=yearDatesByMonth();return Object.keys(by).map(Number).sort((a,b)=>a-b).map(m=>`${MONTHS[m]}: ${by[m].join(",")}`).join("\n")}
 function renderQuick(msg,cls){
   if(quickEditing)return;
   const by=yearDatesByMonth();
-  const lines=Object.keys(by).map(Number).sort((a,b)=>a-b).map(m=>`<div class="qline"><b style="color:${MC[m]}">${MONTHS[m]}:</b> ${by[m].join(", ")}</div>`).join("");
+  const lines=Object.keys(by).map(Number).sort((a,b)=>a-b).map(m=>`<div class="qline"><b style="color:${MC[m]}">${MONTHS[m]}:</b> ${yearDatesHtml(m,by[m])}</div>`).join("");
   $("quick").innerHTML=`<div class="qhead"><h3>СВАДЬБЫ ${year}</h3>${canWrite?'<button class="qbtn" id="qedit">✎ Изменить</button>':""}</div>
     ${lines||'<div class="qempty">Пока нет занятых дат. Нажми «Изменить» и впиши, например: Июнь: 5, 11, 12</div>'}
     ${(()=>{const t=Object.keys(data).filter(id=>dateOf(id,data[id])<=todayKey()&&stageOf(id)!=="done").sort((x,y)=>dateOf(x,data[x]).localeCompare(dateOf(y,data[y])));
@@ -669,7 +698,7 @@ $("bImport").onclick=()=>{
     $("ioGo").disabled=true; let n=0;
     try{for(const r of rows){if(!r||!r.data||!r.data.date)continue;await db.collection("weddings").doc(r.id||r.data.date).set(r.data);data[r.id||r.data.date]=r.data;n++;er.style.color="var(--muted)";er.textContent=`Переношу… ${n}/${rows.length}`}
       let pkMsg="";
-      if(impPk){const names=new Set(SETTINGS.packages.map(p=>normPkg(p.name)));const add=impPk.filter(p=>!names.has(normPkg(p.name)));if(add.length){SETTINGS={...SETTINGS,packages:[...SETTINGS.packages,...add]};await window.__STORE__.settings.set(SETTINGS);pkMsg=`, пакетов: ${add.length}`}}
+      if(impPk){const imp=new Map(impPk.map(p=>[normPkg(p.name),p]));const kept=SETTINGS.packages.filter(p=>!imp.has(normPkg(p.name)));SETTINGS={...SETTINGS,packages:[...kept,...impPk]};await window.__STORE__.settings.set(SETTINGS);pkMsg=`, пакетов: ${impPk.length}`}
       render();er.style.color="#30d158";er.textContent=`Готово — перенесено свадеб: ${n}${pkMsg}`;}
     catch(e){er.style.color="";er.textContent=`Ошибка после ${n} свадеб. Попробуй ещё раз.`;$("ioGo").disabled=false}
   };
@@ -692,6 +721,7 @@ function pkgSheet(){
     <div class="io"><p>Опиши свои пакеты: через сколько дней сдаёшь рилсы и через сколько месяцев клип/фильм, что входит и цену. Когда выберешь пакет в свадьбе, сроки и «что отдать» подставятся сами. Если чего-то в пакете нет — оставь поле пустым.</p></div>
     <div id="pks">${rows.length?"":`<div class="pkempty">Пока нет ни одного пакета.<br>Нажми «+ Добавить пакет» и опиши первый.</div>`}${rows.map((p,i)=>`<div class="pk" data-i="${i}">
       <label>Название</label><input data-f="name" value="${esc(p.name)}" placeholder="Например: Пакет №1, Стандарт, Контент">
+      <label>Кем снимаю</label><div class="seg kind pkkind" data-i="${i}"><button type="button" data-k="video" class="${p.kind!=="content"?"on":""}">🎥 Видеограф</button><button type="button" data-k="content" class="${p.kind==="content"?"on":""}">📱 Контент-мейкер</button></div>
       <div class="row3"><div><label>Рилсы, дней</label><input data-f="reelsDays" inputmode="numeric" value="${p.reelsDays??""}" placeholder="0 — нет"></div>
       <div><label>Клип/фильм, мес.</label><input data-f="finalMonths" inputmode="numeric" value="${p.finalMonths??""}" placeholder="0 — нет"></div>
       <div><label>Цена, ₽</label><input data-f="price" inputmode="numeric" value="${p.price??""}" placeholder="—"></div></div>
@@ -700,7 +730,8 @@ function pkgSheet(){
     <button class="btn addmore" id="pkAdd">+ Добавить пакет</button>
     <div class="actions"><button class="btn primary" id="pkSave">Сохранить пакеты</button></div><div class="err" id="err"></div>`;
     const sync=()=>$("pks").querySelectorAll(".pk").forEach(el=>{const i=+el.dataset.i;el.querySelectorAll("[data-f]").forEach(inp=>{const f=inp.dataset.f;rows[i][f]=["reelsDays","finalMonths","price"].includes(f)?(inp.value.trim()===""?"":num(inp.value)):inp.value})});
-    $("pkAdd").onclick=()=>{sync();rows.push({name:"",reelsDays:"",finalMonths:"",give:"",price:""});draw();const l=$("pks").lastElementChild;l&&l.scrollIntoView({block:"center"});const inp=l&&l.querySelector("[data-f=name]");inp&&inp.focus()};
+    $("pks").querySelectorAll(".pkkind").forEach(g=>g.querySelectorAll("button").forEach(b=>b.onclick=()=>{rows[+g.dataset.i].kind=b.dataset.k;g.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));haptic()}));
+    $("pkAdd").onclick=()=>{sync();rows.push({name:"",kind:"video",reelsDays:"",finalMonths:"",give:"",price:""});draw();const l=$("pks").lastElementChild;l&&l.scrollIntoView({block:"center"});const inp=l&&l.querySelector("[data-f=name]");inp&&inp.focus()};
     $("pks").querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{sync();rows.splice(+b.dataset.rm,1);draw()});
     $("pkSave").onclick=async()=>{sync();const clean=rows.filter(r=>String(r.name).trim()).map(r=>({...r,name:String(r.name).trim()}));
       try{SETTINGS={...SETTINGS,packages:clean};await window.__STORE__.settings.set(SETTINGS);haptic("ok");render();$("err").style.color="#30d158";$("err").textContent="Сохранено ✓ Сроки в карточках пересчитаны."}
