@@ -179,10 +179,10 @@
   .seg.kind button.on{background:#bf5af2;color:#111}
   .seg.kind button.on[data-k="video"]{background:var(--text)}
   .viewbar{flex-direction:column;align-items:center;gap:10px!important;margin:0 0 16px!important}
-  .viewbar .segs{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
-  .viewbar .seg2{width:260px;max-width:100%}
-  .viewbar .seg2 button{flex:1}
-  @media (min-width:600px){.viewbar .segs{flex-direction:row;justify-content:center}}
+  .viewbar .segs{display:flex;flex-direction:row;justify-content:center;gap:6px;width:100%}
+  .viewbar .seg2{flex:1 1 0;max-width:280px;min-width:0}
+  .viewbar .seg2 button{flex:1;padding:8px 4px;font-size:12.5px;white-space:nowrap}
+  @media (max-width:360px){.viewbar .seg2 button{font-size:11.5px;padding:8px 2px}}
   .pkbtn{background:#2a2a31!important;border:1px solid #3a3a43!important;color:#f2f2f4!important;border-radius:999px!important;padding:11px 22px!important;font-size:14px!important}
   .pkbtn:active{background:#34343c!important}
   .quick{position:relative}
