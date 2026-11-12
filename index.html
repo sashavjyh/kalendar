@@ -161,6 +161,11 @@
   .ob .btn{width:100%;margin-bottom:8px}
   .empty-start{background:var(--card);border:1px dashed var(--line);border-radius:16px;padding:16px;margin-bottom:18px;font-size:14px;color:var(--muted);line-height:1.45}
   .empty-start .btn{margin-top:10px;width:100%}
+  .pkbtn{font:600 13px 'Golos Text',system-ui,sans-serif;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:10px 14px;cursor:pointer}
+  .setup{background:rgba(255,159,10,.08);border:1px solid rgba(255,159,10,.35);border-radius:16px;padding:14px;margin:0 0 16px;font-size:14px;line-height:1.45;color:#e8e8ea}
+  .setup b{display:block;font-family:'Unbounded','Golos Text',sans-serif;font-weight:500;font-size:15px;color:#ff9f0a;margin-bottom:4px}
+  .setup .btn{width:100%;margin-top:10px;padding:12px}
+  .pkempty{color:var(--muted);font-size:14px;text-align:center;padding:18px 10px;border:1px dashed var(--line);border-radius:14px;margin-bottom:10px}
   /* sheet */
   .veil{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;z-index:10}
   .veil.open{display:flex}
@@ -216,7 +221,7 @@
 <div class="wrap">
   <header>
     <h1 id="title">Свадьбы</h1>
-    <div class="yearnav"><button id="bSettings" aria-label="Мои пакеты" title="Мои пакеты">⚙︎</button><button id="prev" aria-label="Прошлый год">‹</button><button id="next" aria-label="Следующий год">›</button></div>
+    <div class="yearnav"><button id="prev" aria-label="Прошлый год">‹</button><button id="next" aria-label="Следующий год">›</button></div>
   </header>
   <div class="status" id="status">Загружаю…</div>
   <div class="tgnote" id="tgnote" hidden>Ты открыл календарь не через Telegram — записи сохраняются только в этом браузере. Открой бота <b>@videograf_kalendar_bot</b>, чтобы календарь был с тобой везде.</div>
@@ -229,7 +234,9 @@
   <div class="viewbar">
     <div class="seg2" id="vMode"><button data-v="cal">Календарь</button><button data-v="list">Список</button></div>
     <div class="seg2" id="vSeason"><button data-s="season">Только сезон</button><button data-s="all">Весь год</button></div>
+    <button class="pkbtn" id="bSettings">⚙︎ Мои пакеты</button>
   </div>
+  <div class="setup" id="setupBanner" hidden><b>Настрой свои пакеты</b>Укажи, какие у тебя пакеты, через сколько сдаёшь рилсы и клип/фильм — и календарь сам посчитает сроки по каждой свадьбе.<button class="btn primary" id="setupGo">Настроить пакеты</button></div>
   <div class="months" id="months"></div>
   <div class="legend">
     <span><i style="background:#ff9f0a"></i>занято — нажми, чтобы открыть</span>
@@ -319,11 +326,7 @@ const STAGE_COLOR={planned:"#8e8e93",shot:"#64d2ff",reels:"#bf5af2",editing:"#ff
 const todayKey=()=>{const t=new Date();return key(t.getFullYear(),t.getMonth(),t.getDate())};
 const addDays=(k,n)=>{const [y,m,d]=k.split("-").map(Number);const t=new Date(y,m-1,d+n);return key(t.getFullYear(),t.getMonth(),t.getDate())};
 const daysBetween=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
-const DEFAULT_PKGS=[
-  {name:"Пакет №1",reelsDays:7,finalMonths:8,give:"рилс, клип",price:""},
-  {name:"Пакет №2",reelsDays:7,finalMonths:8,give:"рилс, фильм",price:""},
-  {name:"Контент",reelsDays:14,finalMonths:0,give:"рилсы, поздравления, рега",price:""}];
-let SETTINGS={packages:DEFAULT_PKGS.map(p=>({...p})),onboarded:false}, settingsLoaded=false;
+let SETTINGS={packages:[],onboarded:false}, settingsLoaded=false;
 const normPkg=s=>String(s||"").toLowerCase().replace(/[«»"'().,]/g," ").replace(/пакет|номер|№|#/g," ").replace(/\s+/g," ").trim();
 function pkgOf(w){
   const n=normPkg(w.package); if(!n)return null;
@@ -333,11 +336,11 @@ function pkgOf(w){
   return best;
 }
 const isPkg12=w=>{const p=pkgOf(w);return !!(p&&+p.finalMonths>0)};
-const hasReels=w=>{const p=pkgOf(w);return /рилс|reels/i.test(w.deliverables||"")||!!(p&&+p.reelsDays>0)};
+const hasReels=w=>{const p=pkgOf(w);return +w.reelsDays>0||!!(p&&+p.reelsDays>0)};
 const addMonths=(k,n)=>{const [y,m,d]=k.split("-").map(Number);const t=new Date(y,m-1+n,d);return key(t.getFullYear(),t.getMonth(),t.getDate())};
 const fmtFull=k=>{const [y,m,d]=k.split("-");return `${d}.${m}.${y}`};
 const finalMonths=w=>{if(+w.finalMonths)return +w.finalMonths;const p=pkgOf(w);return p?(+p.finalMonths||0):0};
-const reelsDaysOf=w=>{if(+w.reelsDays)return +w.reelsDays;const p=pkgOf(w);return p&&+p.reelsDays?+p.reelsDays:7};
+const reelsDaysOf=w=>{if(+w.reelsDays)return +w.reelsDays;const p=pkgOf(w);return p&&+p.reelsDays?+p.reelsDays:0};
 function finalInfo(id){
   const w=data[id], k=dateOf(id,w), n=finalMonths(w);
   if(!n)return null;
@@ -393,6 +396,7 @@ function render(){
   $("vMode").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===viewMode));
   $("vSeason").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.s===season));
   $("vSeason").style.display=viewMode==="list"?"none":"";
+  $("setupBanner").hidden=!settingsLoaded||SETTINGS.packages.length>0;
   const lg=document.querySelector(".legend"); if(lg)lg.style.display=viewMode==="list"?"none":"";
   const byM={}; ids.forEach(id=>{const m=+dateOf(id,data[id]).slice(5,7)-1;(byM[m]=byM[m]||[]).push(id)});
   const rowHtml=id=>{const w=data[id],k=dateOf(id,w),m=+k.slice(5,7)-1;
@@ -516,7 +520,7 @@ function edit(id,k){
     <datalist id="pkglist">${SETTINGS.packages.map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist>
     <div class="hint" id="pkghint"></div>
     ${inp("deliverables","Что нужно отдать","рилс, клип, фильм…")}<div class="hint">Через запятую — каждое станет отдельной меткой</div>
-    <div class="two"><div><label>Рилсы — дней после свадьбы</label><input name="reelsDays" inputmode="numeric" value="${w.reelsDays??""}" placeholder="7"></div><div><label>Клип/фильм — месяцев</label><input name="finalMonths" inputmode="numeric" value="${w.finalMonths??""}" placeholder="из пакета"></div></div><div class="hint">Пусто — сроки берутся из пакета (⚙︎ Мои пакеты)</div>
+    <div class="two"><div><label>Рилсы — дней после свадьбы</label><input name="reelsDays" inputmode="numeric" value="${w.reelsDays??""}" placeholder="из пакета"></div><div><label>Клип/фильм — месяцев</label><input name="finalMonths" inputmode="numeric" value="${w.finalMonths??""}" placeholder="из пакета"></div></div><div class="hint">Пусто — сроки берутся из пакета (⚙︎ Мои пакеты)</div>
     <div class="three"><div><label>Предоплата</label><input name="prepay" inputmode="numeric" value="${w.prepay??""}"></div><div><label>Остаток</label><input name="balance" inputmode="numeric" value="${w.balance??""}"></div><div><label>Агентские</label><input name="agency" inputmode="numeric" value="${w.agency??""}"></div></div>
     <label>Заметки</label><textarea name="notes">${esc(w.notes||"")}</textarea>
     <div class="actions">${(!isNew||hasOthers)?`<button type="button" class="btn" id="cancel">Отмена</button>`:""}<button class="btn primary" id="save" style="background:${c}">Сохранить</button></div>
@@ -524,7 +528,7 @@ function edit(id,k){
    </form>`;
   const cb=$("cancel"); if(cb)cb.onclick=()=>view(k);
   const fpk=$("frm").querySelector("[name=package]"), fgive=$("frm").querySelector("[name=deliverables]"), fbal=$("frm").querySelector("[name=balance]"), fpre=$("frm").querySelector("[name=prepay]");
-  const pkHint=()=>{const p=pkgOf({package:fpk.value});$("pkghint").textContent=p?`Рилсы — ${+p.reelsDays||7} дн.${+p.finalMonths?`, клип/фильм — ${p.finalMonths} мес.`:""}${p.price?`, цена ${Number(p.price).toLocaleString("ru-RU")} ₽`:""}`:(fpk.value?"Такого пакета нет в «Мои пакеты» — сроки впиши ниже":"")};
+  const pkHint=()=>{const p=pkgOf({package:fpk.value});$("pkghint").textContent=p?`Рилсы — ${+p.reelsDays||7} дн.${+p.finalMonths?`, клип/фильм — ${p.finalMonths} мес.`:""}${p.price?`, цена ${Number(p.price).toLocaleString("ru-RU")} ₽`:""}`:(SETTINGS.packages.length?(fpk.value?"Такого пакета нет в «Мои пакеты» — сроки впиши ниже или добавь пакет":""):"Пакеты ещё не настроены — нажми «⚙︎ Мои пакеты» на главном экране")};
   pkHint();
   fpk.oninput=()=>{pkHint();const p=pkgOf({package:fpk.value});if(!p)return;
     if(!fgive.value.trim()&&p.give)fgive.value=p.give;
@@ -640,7 +644,7 @@ document.querySelectorAll("[data-secret]").forEach(el=>el.addEventListener("clic
 function ioSheet(html){tgMode("io");$("sheet").innerHTML=`<div class="shead"><div><div class="stitle">${html.title}</div></div><button class="x" onclick="closeSheet()">✕</button></div><div class="io">${html.body}</div>`;$("veil").classList.add("open")}
 $("bExport").onclick=()=>{
   const rows=Object.keys(data).sort().map(id=>({id,data:data[id]}));
-  const txt=JSON.stringify({app:"videograf_kalendar",exported:todayKey(),weddings:rows});
+  const txt=JSON.stringify({app:"videograf_kalendar",exported:todayKey(),settings:{packages:SETTINGS.packages},weddings:rows});
   ioSheet({title:"Копия данных",body:`<p>Здесь все твои свадьбы (${rows.length}). Скопируй текст и сохрани, например, в «Избранное» в Telegram — по нему можно всё восстановить через «Перенести свадьбы».</p><textarea readonly id="ioT">${esc(txt)}</textarea><div class="actions"><button class="btn primary" id="ioCopy">Скопировать</button></div><div class="err" id="err"></div>`});
   $("ioCopy").onclick=async()=>{try{await navigator.clipboard.writeText(txt);$("err").style.color="#30d158";$("err").textContent="Скопировано ✓"}catch(e){const t=$("ioT");t.focus();t.select();$("err").textContent="Выдели текст и скопируй вручную"}};
 };
@@ -649,10 +653,13 @@ $("bImport").onclick=()=>{
   $("ioF").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("ioT").value=r.result};r.readAsText(f)};
   $("ioGo").onclick=async()=>{
     const er=$("err"); let rows;
-    try{const j=JSON.parse($("ioT").value);rows=Array.isArray(j)?j:j.weddings;if(!Array.isArray(rows))throw 0}catch(e){er.textContent="Не похоже на копию календаря";return}
+    let impPk=null;
+    try{const j=JSON.parse($("ioT").value);rows=Array.isArray(j)?j:j.weddings;if(!Array.isArray(rows))throw 0;if(j.settings&&Array.isArray(j.settings.packages)&&j.settings.packages.length)impPk=j.settings.packages}catch(e){er.textContent="Не похоже на копию календаря";return}
     $("ioGo").disabled=true; let n=0;
     try{for(const r of rows){if(!r||!r.data||!r.data.date)continue;await db.collection("weddings").doc(r.id||r.data.date).set(r.data);data[r.id||r.data.date]=r.data;n++;er.style.color="var(--muted)";er.textContent=`Переношу… ${n}/${rows.length}`}
-      render();er.style.color="#30d158";er.textContent=`Готово — перенесено свадеб: ${n}`;}
+      let pkMsg="";
+      if(impPk){const names=new Set(SETTINGS.packages.map(p=>normPkg(p.name)));const add=impPk.filter(p=>!names.has(normPkg(p.name)));if(add.length){SETTINGS={...SETTINGS,packages:[...SETTINGS.packages,...add]};await window.__STORE__.settings.set(SETTINGS);pkMsg=`, пакетов: ${add.length}`}}
+      render();er.style.color="#30d158";er.textContent=`Готово — перенесено свадеб: ${n}${pkMsg}`;}
     catch(e){er.style.color="";er.textContent=`Ошибка после ${n} свадеб. Попробуй ещё раз.`;$("ioGo").disabled=false}
   };
 };
@@ -671,9 +678,9 @@ function pkgSheet(){
   const rows=SETTINGS.packages.map(p=>({...p}));
   const draw=()=>{
     $("sheet").innerHTML=`<div class="shead"><div><div class="stitle">Мои пакеты</div></div><button class="x" onclick="closeSheet()">✕</button></div>
-    <div class="io"><p>Здесь твои пакеты и сроки сдачи. Когда выбираешь пакет в карточке свадьбы, сроки и «что отдать» подставятся сами.</p></div>
-    <div id="pks">${rows.map((p,i)=>`<div class="pk" data-i="${i}">
-      <label>Название</label><input data-f="name" value="${esc(p.name)}" placeholder="Например: Пакет №1">
+    <div class="io"><p>Опиши свои пакеты: через сколько дней сдаёшь рилсы и через сколько месяцев клип/фильм, что входит и цену. Когда выберешь пакет в свадьбе, сроки и «что отдать» подставятся сами. Если чего-то в пакете нет — оставь поле пустым.</p></div>
+    <div id="pks">${rows.length?"":`<div class="pkempty">Пока нет ни одного пакета.<br>Нажми «+ Добавить пакет» и опиши первый.</div>`}${rows.map((p,i)=>`<div class="pk" data-i="${i}">
+      <label>Название</label><input data-f="name" value="${esc(p.name)}" placeholder="Например: Пакет №1, Стандарт, Контент">
       <div class="row3"><div><label>Рилсы, дней</label><input data-f="reelsDays" inputmode="numeric" value="${p.reelsDays??""}" placeholder="0 — нет"></div>
       <div><label>Клип/фильм, мес.</label><input data-f="finalMonths" inputmode="numeric" value="${p.finalMonths??""}" placeholder="0 — нет"></div>
       <div><label>Цена, ₽</label><input data-f="price" inputmode="numeric" value="${p.price??""}" placeholder="—"></div></div>
@@ -682,7 +689,7 @@ function pkgSheet(){
     <button class="btn addmore" id="pkAdd">+ Добавить пакет</button>
     <div class="actions"><button class="btn primary" id="pkSave">Сохранить пакеты</button></div><div class="err" id="err"></div>`;
     const sync=()=>$("pks").querySelectorAll(".pk").forEach(el=>{const i=+el.dataset.i;el.querySelectorAll("[data-f]").forEach(inp=>{const f=inp.dataset.f;rows[i][f]=["reelsDays","finalMonths","price"].includes(f)?(inp.value.trim()===""?"":num(inp.value)):inp.value})});
-    $("pkAdd").onclick=()=>{sync();rows.push({name:"",reelsDays:7,finalMonths:8,give:"",price:""});draw();const l=$("pks").lastElementChild;l&&l.scrollIntoView({block:"center"})};
+    $("pkAdd").onclick=()=>{sync();rows.push({name:"",reelsDays:"",finalMonths:"",give:"",price:""});draw();const l=$("pks").lastElementChild;l&&l.scrollIntoView({block:"center"});const inp=l&&l.querySelector("[data-f=name]");inp&&inp.focus()};
     $("pks").querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{sync();rows.splice(+b.dataset.rm,1);draw()});
     $("pkSave").onclick=async()=>{sync();const clean=rows.filter(r=>String(r.name).trim()).map(r=>({...r,name:String(r.name).trim()}));
       try{SETTINGS={...SETTINGS,packages:clean};await window.__STORE__.settings.set(SETTINGS);haptic("ok");render();$("err").style.color="#30d158";$("err").textContent="Сохранено ✓ Сроки в карточках пересчитаны."}
@@ -690,7 +697,7 @@ function pkgSheet(){
   };
   draw(); $("veil").classList.add("open"); $("sheet").scrollTop=0;
 }
-$("bSettings").onclick=pkgSheet;
+$("bSettings").onclick=pkgSheet; $("setupGo").onclick=pkgSheet;
 
 // ---------- Первое знакомство ----------
 function onboarding(){
