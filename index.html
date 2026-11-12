@@ -185,6 +185,15 @@
   @media (min-width:600px){.viewbar .segs{flex-direction:row;justify-content:center}}
   .pkbtn{background:#2a2a31!important;border:1px solid #3a3a43!important;color:#f2f2f4!important;border-radius:999px!important;padding:11px 22px!important;font-size:14px!important}
   .pkbtn:active{background:#34343c!important}
+  .quick{position:relative}
+  .qhead.qfloat{position:absolute;top:12px;right:12px;margin:0}
+  .quick .qline:first-of-type{padding-right:118px}
+  .qtitle{font-size:13px;color:var(--muted);font-weight:600}
+  .stats{grid-template-columns:1fr 1fr!important}
+  .stat.scount{grid-column:1/-1;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .stat.scount b{display:inline!important;width:auto}
+  .stat.scount #sCountLab{font-size:15px;color:var(--text)}
+  .stat.scount .split{display:inline!important;margin:0 0 0 10px;font-size:13px}
   /* sheet */
   .veil{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;z-index:10}
   .veil.open{display:flex}
@@ -246,16 +255,16 @@
   <div class="tgnote" id="tgnote" hidden>Ты открыл календарь не через Telegram — записи сохраняются только в этом браузере. Открой бота <b>@videograf_kalendar_bot</b>, чтобы календарь был с тобой везде.</div>
   <div class="quick" id="quick"></div>
   <div class="stats">
-    <div class="stat"><b id="sCount">—</b><span>свадеб</span></div>
+    <div class="stat scount"><b id="sCount">—</b><span id="sCountLab">свадеб</span></div>
     <div class="stat secret hidden" data-secret><b id="sBal">—</b><span>ждём</span></div>
     <div class="stat secret hidden" data-secret><b id="sPre">—</b><span>получено</span></div>
   </div>
   <div class="viewbar">
-    <button class="pkbtn" id="bSettings">⚙︎ Мои пакеты</button>
     <div class="segs">
       <div class="seg2" id="vMode"><button data-v="cal">Календарь</button><button data-v="list">Список</button></div>
       <div class="seg2" id="vSeason"><button data-s="season">Только сезон</button><button data-s="all">Весь год</button></div>
     </div>
+    <button class="pkbtn" id="bSettings">⚙︎ Мои пакеты</button>
   </div>
   <div class="setup" id="setupBanner" hidden><b>Настрой свои пакеты</b>Укажи, какие у тебя пакеты, через сколько сдаёшь рилсы и клип/фильм — и календарь сам посчитает сроки по каждой свадьбе.<button class="btn primary" id="setupGo">Настроить пакеты</button></div>
   <div class="months" id="months"></div>
@@ -430,13 +439,13 @@ function render(){
   const ws=ids.map(id=>data[id]);
   { const nc=ids.filter(id=>kindOf(data[id])==="content").length, nv=ids.length-nc;
     $("sCount").textContent=ws.length;
-    const lab=$("sCount").parentElement.querySelector("span"); lab.innerHTML=plural(ws.length).replace("свадьба","свадьба")+(nc?`<span class="split">🎥 ${nv} · 📱 ${nc}</span>`:""); }
+    $("sCountLab").innerHTML=plural(ws.length)+(nc?`<span class="split">🎥 ${nv} видео · 📱 ${nc} контент</span>`:""); }
   $("sBal").textContent=money(ws.reduce((s,w)=>s+(w.paid?0:(+w.balance||0)),0));
   $("sPre").textContent=money(ws.reduce((s,w)=>s+(+w.prepay||0)+(w.paid?(+w.balance||0):0),0));
   renderQuick();
   fitStats();
 }
-function fitStats(){document.querySelectorAll(".stat b").forEach(b=>{let f=19;b.style.setProperty("font-size",f+"px","important");
+function fitStats(){document.querySelectorAll(".stat:not(.scount) b").forEach(b=>{let f=19;b.style.setProperty("font-size",f+"px","important");
   const box=b.parentElement;const max=box.clientWidth-parseFloat(getComputedStyle(box).paddingLeft)-parseFloat(getComputedStyle(box).paddingRight);
   while(b.scrollWidth>max&&f>10){f-=.5;b.style.setProperty("font-size",f+"px","important")}})}
 window.addEventListener("resize",fitStats);
@@ -611,7 +620,7 @@ function renderQuick(msg,cls){
   if(quickEditing)return;
   const by=yearDatesByMonth();
   const lines=Object.keys(by).map(Number).sort((a,b)=>a-b).map(m=>`<div class="qline"><b style="color:${MC[m]}">${MONTHS[m]}:</b> ${yearDatesHtml(m,by[m])}</div>`).join("");
-  $("quick").innerHTML=`<div class="qhead"><h3>СВАДЬБЫ ${year}</h3>${canWrite?'<button class="qbtn" id="qedit">✎ Изменить</button>':""}</div>
+  $("quick").innerHTML=`<div class="qhead qfloat">${canWrite?'<button class="qbtn" id="qedit">✎ Изменить</button>':""}</div>
     ${lines||'<div class="qempty">Пока нет занятых дат. Нажми «Изменить» и впиши, например: Июнь: 5, 11, 12</div>'}
     ${(()=>{const t=Object.keys(data).filter(id=>dateOf(id,data[id])<=todayKey()&&stageOf(id)!=="done").sort((x,y)=>dateOf(x,data[x]).localeCompare(dateOf(y,data[y])));
       if(!t.length)return "";
@@ -624,7 +633,7 @@ function renderQuick(msg,cls){
 }
 function startQuickEdit(){
   quickEditing=true; pendingRemove=null;
-  $("quick").innerHTML=`<div class="qhead"><h3>СВАДЬБЫ ${year}</h3></div>
+  $("quick").innerHTML=`<div class="qhead"><span class="qtitle">Даты свадеб</span></div>
     <textarea id="qta" spellcheck="false" placeholder="Февраль: 27&#10;Май: 19&#10;Июнь: 5,11,12">${esc(quickText())}</textarea>
     <div class="qhint">Каждый месяц с новой строки: «Месяц: числа через запятую». Новые даты появятся в календаре, подробности заполнишь в карточке.</div>
     <div class="qactions"><button class="btn" id="qcancel">Отмена</button><button class="btn primary" id="qsave">Сохранить</button></div>
