@@ -145,6 +145,22 @@
   .tabs button i{font-style:normal;display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);margin-left:5px;vertical-align:2px}
   .pane{display:none}.pane.on{display:block}
   .tg .hide-tg{display:none!important}
+  .pk{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+  .pk input{width:100%;background:#0f0f12;border:1px solid var(--line);border-radius:10px;color:var(--text);font:500 15px 'Golos Text',system-ui,sans-serif;padding:9px 10px;outline:none}
+  .pk input:focus{border-color:var(--accent)}
+  .pk label{display:block;font-size:11px;color:var(--muted);margin:8px 0 4px;font-weight:600}
+  .pk .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .pk .rm{background:none;border:none;color:var(--danger);font:600 13px 'Golos Text',system-ui,sans-serif;margin-top:10px;cursor:pointer;padding:0}
+  .ob{text-align:center;padding:6px 4px 0}
+  .ob .big{font-size:44px;margin-bottom:6px}
+  .ob h3{font-family:'Unbounded','Golos Text',sans-serif;font-weight:500;font-size:20px;margin-bottom:8px}
+  .ob p.lead{color:var(--muted);font-size:14px;line-height:1.45;margin-bottom:16px}
+  .steps{text-align:left;display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+  .steps div{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;font-size:14px;line-height:1.4}
+  .steps b.n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#111;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .ob .btn{width:100%;margin-bottom:8px}
+  .empty-start{background:var(--card);border:1px dashed var(--line);border-radius:16px;padding:16px;margin-bottom:18px;font-size:14px;color:var(--muted);line-height:1.45}
+  .empty-start .btn{margin-top:10px;width:100%}
   /* sheet */
   .veil{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;z-index:10}
   .veil.open{display:flex}
@@ -200,7 +216,7 @@
 <div class="wrap">
   <header>
     <h1 id="title">Свадьбы</h1>
-    <div class="yearnav"><button id="prev" aria-label="Прошлый год">‹</button><button id="next" aria-label="Следующий год">›</button></div>
+    <div class="yearnav"><button id="bSettings" aria-label="Мои пакеты" title="Мои пакеты">⚙︎</button><button id="prev" aria-label="Прошлый год">‹</button><button id="next" aria-label="Следующий год">›</button></div>
   </header>
   <div class="status" id="status">Загружаю…</div>
   <div class="tgnote" id="tgnote" hidden>Ты открыл календарь не через Telegram — записи сохраняются только в этом браузере. Открой бота <b>@videograf_kalendar_bot</b>, чтобы календарь был с тобой везде.</div>
@@ -267,7 +283,11 @@
       delete:async()=>{await S.del(P+safe(id));delete cache[safe(id)]}
     })
   })};
-  window.__STORE__={inTG,cloud:!!CS,db,reload:loadAll,all:()=>cache};
+  const settings={
+    get:async()=>{try{const v=(await S.getMany(["settings"])).settings;return v?JSON.parse(v):null}catch(e){return null}},
+    set:async o=>{const v=JSON.stringify(o);if(v.length>4000)throw{code:"invalid_argument"};await S.set("settings",v)}
+  };
+  window.__STORE__={inTG,cloud:!!CS,db,settings,reload:loadAll,all:()=>cache};
   window.claude={use:async n=>n==="db"?db:(n==="user"?{can:async()=>true}:null)};
 })();
 </script>
@@ -299,11 +319,25 @@ const STAGE_COLOR={planned:"#8e8e93",shot:"#64d2ff",reels:"#bf5af2",editing:"#ff
 const todayKey=()=>{const t=new Date();return key(t.getFullYear(),t.getMonth(),t.getDate())};
 const addDays=(k,n)=>{const [y,m,d]=k.split("-").map(Number);const t=new Date(y,m-1,d+n);return key(t.getFullYear(),t.getMonth(),t.getDate())};
 const daysBetween=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
-const isPkg12=w=>/(№|#|номер|пакет)\s*[12](?!\d)/i.test(w.package||"");
-const hasReels=w=>/рилс|reels/i.test(w.deliverables||"")||/контент/i.test(w.package||"")||isPkg12(w);
+const DEFAULT_PKGS=[
+  {name:"Пакет №1",reelsDays:7,finalMonths:8,give:"рилс, клип",price:""},
+  {name:"Пакет №2",reelsDays:7,finalMonths:8,give:"рилс, фильм",price:""},
+  {name:"Контент",reelsDays:14,finalMonths:0,give:"рилсы, поздравления, рега",price:""}];
+let SETTINGS={packages:DEFAULT_PKGS.map(p=>({...p})),onboarded:false}, settingsLoaded=false;
+const normPkg=s=>String(s||"").toLowerCase().replace(/[«»"'().,]/g," ").replace(/пакет|номер|№|#/g," ").replace(/\s+/g," ").trim();
+function pkgOf(w){
+  const n=normPkg(w.package); if(!n)return null;
+  let best=null;
+  for(const p of SETTINGS.packages){const pn=normPkg(p.name); if(!pn)continue;
+    if(n===pn||(n.startsWith(pn)&&!/[0-9a-zа-яё]/i.test(n.charAt(pn.length)))){if(!best||pn.length>normPkg(best.name).length)best=p}}
+  return best;
+}
+const isPkg12=w=>{const p=pkgOf(w);return !!(p&&+p.finalMonths>0)};
+const hasReels=w=>{const p=pkgOf(w);return /рилс|reels/i.test(w.deliverables||"")||!!(p&&+p.reelsDays>0)};
 const addMonths=(k,n)=>{const [y,m,d]=k.split("-").map(Number);const t=new Date(y,m-1+n,d);return key(t.getFullYear(),t.getMonth(),t.getDate())};
 const fmtFull=k=>{const [y,m,d]=k.split("-");return `${d}.${m}.${y}`};
-const finalMonths=w=>+w.finalMonths||(isPkg12(w)?8:0);
+const finalMonths=w=>{if(+w.finalMonths)return +w.finalMonths;const p=pkgOf(w);return p?(+p.finalMonths||0):0};
+const reelsDaysOf=w=>{if(+w.reelsDays)return +w.reelsDays;const p=pkgOf(w);return p&&+p.reelsDays?+p.reelsDays:7};
 function finalInfo(id){
   const w=data[id], k=dateOf(id,w), n=finalMonths(w);
   if(!n)return null;
@@ -318,7 +352,7 @@ function reelsInfo(id){
   const w=data[id], k=dateOf(id,w);
   if(!hasReels(w))return null;
   const done=!!w.reelsDone||["reels","editing","done"].includes(w.stage);
-  const nd=+w.reelsDays||7, due=addDays(k,nd), left=daysBetween(todayKey(),due);
+  const nd=reelsDaysOf(w), due=addDays(k,nd), left=daysBetween(todayKey(),due);
   if(done) return {done,cls:"",text:`Рилсы сданы (срок был до ${fmtShort(due)})`,left,due};
   if(k>todayKey()) return {done,cls:"",text:`Рилсы сдать до ${fmtShort(due)} (${nd} дней после свадьбы)`,left,due};
   if(left<0) return {done,cls:"late",text:`Рилсы просрочены на ${-left} дн. — срок был ${fmtShort(due)}`,left,due};
@@ -364,7 +398,7 @@ function render(){
   const rowHtml=id=>{const w=data[id],k=dateOf(id,w),m=+k.slice(5,7)-1;
     return `<div class="row" style="--mc:${MC[m]}" data-k="${k}"><div class="dt">${fmtShort(k)}</div><div class="who">${esc(w.couple||"Пара не указана")}${w.label?`<span class="label">${esc(w.label)}</span>`:""}${w.todo?`<span class="flag">● уточнить</span>`:""}${w.paid?`<span class="pd">✓ оплачено</span>`:""}<small>${esc([w.venue,w.organizer].filter(Boolean).join(" · ")||"—")}</small></div></div>`};
   $("list").innerHTML=ids.length?Object.keys(byM).map(Number).sort((a,b)=>a-b).map(m=>`<div class="lmonth"><h3 style="color:${MC[m]};background:${MC[m]}22">${MONTHS[m]}<span>${byM[m].length} ${plural(byM[m].length)}</span></h3><div class="list2">${byM[m].map(rowHtml).join("")}</div></div>`).join("")
-    :`<div class="empty">В ${year} году пока нет свадеб. Нажми на дату в календаре, чтобы добавить.</div>`;
+    :`<div class="empty-start">В ${year} году пока нет свадеб. Нажми на любую дату в календаре, чтобы добавить первую.${Object.keys(data).length?"":`<button class="btn" onclick="onboarding()">Как это работает?</button>`}</div>`;
   const ws=ids.map(id=>data[id]);
   $("sCount").textContent=ws.length;
   $("sBal").textContent=money(ws.reduce((s,w)=>s+(w.paid?0:(+w.balance||0)),0));
@@ -478,15 +512,23 @@ function edit(id,k){
     <input name="organizer" value="${esc(w.organizer??"")}" placeholder="Имя">
     ${inp("venue","Площадка")}
     <div class="two"><div>${inp("photographer","Фотограф")}</div><div>${inp("host","Ведущий")}</div></div>
-    ${inp("package","Пакет","Пакет №1 / Контент")}
+    <label>Пакет</label><input name="package" list="pkglist" value="${esc(w.package??"")}" placeholder="Выбери из своих пакетов или впиши">
+    <datalist id="pkglist">${SETTINGS.packages.map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist>
+    <div class="hint" id="pkghint"></div>
     ${inp("deliverables","Что нужно отдать","рилс, клип, фильм…")}<div class="hint">Через запятую — каждое станет отдельной меткой</div>
-    <div class="two"><div><label>Рилсы — дней после свадьбы</label><input name="reelsDays" inputmode="numeric" value="${w.reelsDays??""}" placeholder="7"></div><div><label>Клип/фильм — месяцев</label><input name="finalMonths" inputmode="numeric" value="${w.finalMonths??""}" placeholder="${isPkg12(w)?"8":"—"}"></div></div><div class="hint">Пусто = по умолчанию: рилсы 7 дней, клип/фильм 8 месяцев для пакетов №1 и №2</div>
+    <div class="two"><div><label>Рилсы — дней после свадьбы</label><input name="reelsDays" inputmode="numeric" value="${w.reelsDays??""}" placeholder="7"></div><div><label>Клип/фильм — месяцев</label><input name="finalMonths" inputmode="numeric" value="${w.finalMonths??""}" placeholder="из пакета"></div></div><div class="hint">Пусто — сроки берутся из пакета (⚙︎ Мои пакеты)</div>
     <div class="three"><div><label>Предоплата</label><input name="prepay" inputmode="numeric" value="${w.prepay??""}"></div><div><label>Остаток</label><input name="balance" inputmode="numeric" value="${w.balance??""}"></div><div><label>Агентские</label><input name="agency" inputmode="numeric" value="${w.agency??""}"></div></div>
     <label>Заметки</label><textarea name="notes">${esc(w.notes||"")}</textarea>
     <div class="actions">${(!isNew||hasOthers)?`<button type="button" class="btn" id="cancel">Отмена</button>`:""}<button class="btn primary" id="save" style="background:${c}">Сохранить</button></div>
     <div class="err" id="err"></div>
    </form>`;
   const cb=$("cancel"); if(cb)cb.onclick=()=>view(k);
+  const fpk=$("frm").querySelector("[name=package]"), fgive=$("frm").querySelector("[name=deliverables]"), fbal=$("frm").querySelector("[name=balance]"), fpre=$("frm").querySelector("[name=prepay]");
+  const pkHint=()=>{const p=pkgOf({package:fpk.value});$("pkghint").textContent=p?`Рилсы — ${+p.reelsDays||7} дн.${+p.finalMonths?`, клип/фильм — ${p.finalMonths} мес.`:""}${p.price?`, цена ${Number(p.price).toLocaleString("ru-RU")} ₽`:""}`:(fpk.value?"Такого пакета нет в «Мои пакеты» — сроки впиши ниже":"")};
+  pkHint();
+  fpk.oninput=()=>{pkHint();const p=pkgOf({package:fpk.value});if(!p)return;
+    if(!fgive.value.trim()&&p.give)fgive.value=p.give;
+    if(!fbal.value.trim()&&+p.price){const pre=num(fpre.value)||0;fbal.value=Math.max(0,+p.price-pre)}};
   tgMode("edit",k,isNew); if(TGW){const sv=$("save");if(sv)sv.classList.add("hide-tg");if(cb)cb.classList.add("hide-tg")}
   $("seg").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("seg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));$("frm").querySelector("[name=orgRole]").value=b.dataset.role==="coordinator"?"coordinator":""});
   $("frm").onsubmit=async e=>{
@@ -530,7 +572,7 @@ function renderQuick(msg,cls){
     ${(()=>{const t=Object.keys(data).filter(id=>dateOf(id,data[id])<=todayKey()&&stageOf(id)!=="done").sort((x,y)=>dateOf(x,data[x]).localeCompare(dateOf(y,data[y])));
       if(!t.length)return "";
       return `<div class="work"><h5>В работе (${t.length})</h5>${t.map(id=>{const w=data[id],k=dateOf(id,w),r=reelsInfo(id),st=STAGES.find(x=>x[0]===stageOf(id))[1];
-        return `<div class="work-row" data-open="${k}"><span class="dt" style="color:${color(k)}">${fmtShort(k)}</span><span>${esc(w.couple||"Без имени")} <span class="st">· ${st}</span>${r&&!r.done?` <span class="${r.cls}">· ${r.left<0?"рилсы просрочены":"рилсы до "+fmtShort(addDays(k,+w.reelsDays||7))}</span>`:(()=>{const fi=finalInfo(id);return fi&&!fi.done?` <span class="${fi.cls}">· ${fi.cls==="late"?"клип/фильм просрочен":"клип/фильм до "+fmtFull(fi.due)}</span>`:""})()}</span></div>`}).join("")}</div>`})()}
+        return `<div class="work-row" data-open="${k}"><span class="dt" style="color:${color(k)}">${fmtShort(k)}</span><span>${esc(w.couple||"Без имени")} <span class="st">· ${st}</span>${r&&!r.done?` <span class="${r.cls}">· ${r.left<0?"рилсы просрочены":"рилсы до "+fmtShort(addDays(k,reelsDaysOf(w)))}</span>`:(()=>{const fi=finalInfo(id);return fi&&!fi.done?` <span class="${fi.cls}">· ${fi.cls==="late"?"клип/фильм просрочен":"клип/фильм до "+fmtFull(fi.due)}</span>`:""})()}</span></div>`}).join("")}</div>`})()}
     ${(()=>{const t=yearIds().filter(id=>data[id].todo);return t.length?`<div class="todos"><h5>Уточнить (${t.length})</h5>${t.map(id=>{const k=dateOf(id,data[id]);return `<div class="todo-row" data-open="${k}"><span class="dt" style="color:${color(k)}">${fmtShort(k)}</span><span>${esc(data[id].couple?data[id].couple+" — ":"")}${esc(data[id].todo)}</span></div>`}).join("")}</div>`:""})()}
     ${msg?`<div class="qmsg ${cls||""}">${msg}</div>`:""}`;
   const b=$("qedit"); if(b)b.onclick=startQuickEdit;
@@ -623,6 +665,55 @@ function scrollToNearest(){
   const el=$("m"+(+ks[0].slice(5,7)-1)); if(el){firstScroll=false;el.scrollIntoView({block:"start"})}
 }
 
+// ---------- Мои пакеты ----------
+function pkgSheet(){
+  tgMode("io");
+  const rows=SETTINGS.packages.map(p=>({...p}));
+  const draw=()=>{
+    $("sheet").innerHTML=`<div class="shead"><div><div class="stitle">Мои пакеты</div></div><button class="x" onclick="closeSheet()">✕</button></div>
+    <div class="io"><p>Здесь твои пакеты и сроки сдачи. Когда выбираешь пакет в карточке свадьбы, сроки и «что отдать» подставятся сами.</p></div>
+    <div id="pks">${rows.map((p,i)=>`<div class="pk" data-i="${i}">
+      <label>Название</label><input data-f="name" value="${esc(p.name)}" placeholder="Например: Пакет №1">
+      <div class="row3"><div><label>Рилсы, дней</label><input data-f="reelsDays" inputmode="numeric" value="${p.reelsDays??""}" placeholder="0 — нет"></div>
+      <div><label>Клип/фильм, мес.</label><input data-f="finalMonths" inputmode="numeric" value="${p.finalMonths??""}" placeholder="0 — нет"></div>
+      <div><label>Цена, ₽</label><input data-f="price" inputmode="numeric" value="${p.price??""}" placeholder="—"></div></div>
+      <label>Что отдать</label><input data-f="give" value="${esc(p.give||"")}" placeholder="рилс, клип, фильм…">
+      <button class="rm" data-rm="${i}">Удалить пакет</button></div>`).join("")}</div>
+    <button class="btn addmore" id="pkAdd">+ Добавить пакет</button>
+    <div class="actions"><button class="btn primary" id="pkSave">Сохранить пакеты</button></div><div class="err" id="err"></div>`;
+    const sync=()=>$("pks").querySelectorAll(".pk").forEach(el=>{const i=+el.dataset.i;el.querySelectorAll("[data-f]").forEach(inp=>{const f=inp.dataset.f;rows[i][f]=["reelsDays","finalMonths","price"].includes(f)?(inp.value.trim()===""?"":num(inp.value)):inp.value})});
+    $("pkAdd").onclick=()=>{sync();rows.push({name:"",reelsDays:7,finalMonths:8,give:"",price:""});draw();const l=$("pks").lastElementChild;l&&l.scrollIntoView({block:"center"})};
+    $("pks").querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{sync();rows.splice(+b.dataset.rm,1);draw()});
+    $("pkSave").onclick=async()=>{sync();const clean=rows.filter(r=>String(r.name).trim()).map(r=>({...r,name:String(r.name).trim()}));
+      try{SETTINGS={...SETTINGS,packages:clean};await window.__STORE__.settings.set(SETTINGS);haptic("ok");render();$("err").style.color="#30d158";$("err").textContent="Сохранено ✓ Сроки в карточках пересчитаны."}
+      catch(e){$("err").style.color="";$("err").textContent="Не удалось сохранить, попробуй ещё раз."}};
+  };
+  draw(); $("veil").classList.add("open"); $("sheet").scrollTop=0;
+}
+$("bSettings").onclick=pkgSheet;
+
+// ---------- Первое знакомство ----------
+function onboarding(){
+  tgMode("io");
+  const name=(TGW&&TGW.initDataUnsafe&&TGW.initDataUnsafe.user&&TGW.initDataUnsafe.user.first_name)||"";
+  $("sheet").innerHTML=`<div class="shead"><div></div><button class="x" onclick="closeSheet()">✕</button></div>
+  <div class="ob"><div class="big">🎬</div><h3>${name?esc(name)+", привет!":"Привет!"}</h3>
+  <p class="lead">Это календарь свадеб для видеографа: брони, пары, сроки сдачи рилсов и фильмов, оплаты. Твои записи видишь только ты.</p>
+  <div class="steps">
+    <div><b class="n">1</b><span><b>Настрой свои пакеты</b> — сроки сдачи рилсов и фильма, что отдаёшь, цена. Потом выбираешь пакет в свадьбе, всё подставится само.</span></div>
+    <div><b class="n">2</b><span><b>Нажми на дату</b> в календаре и заполни свадьбу: пара, организатор, площадка, деньги.</span></div>
+    <div><b class="n">3</b><span><b>Отмечай кружками</b> сданные рилсы, фильм и оплату — просроченное подсветится красным.</span></div>
+  </div>
+  <button class="btn primary" id="obPkg">Настроить пакеты</button>
+  <button class="btn" id="obGo">Начать</button>
+  <button class="btn" id="obImp" style="background:transparent;color:var(--muted)">Перенести свадьбы из копии</button></div>`;
+  const done=async()=>{SETTINGS={...SETTINGS,onboarded:true};try{await window.__STORE__.settings.set(SETTINGS)}catch(e){}};
+  $("obPkg").onclick=()=>{done();pkgSheet()};
+  $("obGo").onclick=()=>{done();closeSheet()};
+  $("obImp").onclick=()=>{done();$("bImport").click()};
+  $("veil").classList.add("open");
+}
+
 render();
 (async()=>{
   try{
@@ -634,10 +725,14 @@ render();
   if(!db){$("status").textContent="Не удалось открыть хранилище."; return}
   let loaded=false;
   const t=setTimeout(()=>{if(!loaded)$("status").textContent="Не получается загрузить данные, проверь интернет…"},10000);
+  try{const st=window.__STORE__&&await window.__STORE__.settings.get(); if(st&&Array.isArray(st.packages))SETTINGS={...SETTINGS,...st}}catch(e){}
+  settingsLoaded=true;
+  let firstLoad=true;
   db.collection("weddings").onSnapshot(snap=>{
     const nd={}; snap.docs.forEach(d=>{if(d.exists)nd[d.id]=d.data()}); data=nd;
     if(!snap.metadata.fromCache){loaded=true;clearTimeout(t);$("status").textContent=""}
     render(); scrollToNearest();
+    if(firstLoad){firstLoad=false; if(!Object.keys(data).length&&!SETTINGS.onboarded)onboarding()}
   },err=>{loaded=true;clearTimeout(t);$("status").textContent="Ошибка загрузки данных."});
 })();
 </script>
