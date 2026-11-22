@@ -456,6 +456,7 @@ function pkgOf(w){
     if(n===pn||(n.startsWith(pn)&&!/[0-9a-zа-яё]/i.test(n.charAt(pn.length)))){if(!best||pn.length>normPkg(best.name).length)best=p}}
   return best;
 }
+const fmtPkg=v=>String(v??"").replace(/№\s*/g,"#");
 const kindOf=w=>{if(w.kind==="content"||w.kind==="video")return w.kind;const p=pkgOf(w);return p&&p.kind==="content"?"content":"video"};
 const dateIsContent=k=>{const l=byDate()[k]||[];return l.length>0&&l.every(id=>kindOf(data[id])==="content")};
 const isPkg12=w=>{const p=pkgOf(w);return !!(p&&+p.finalMonths>0)};
@@ -523,7 +524,7 @@ function render(){
   const lg=document.querySelector(".legend"); if(lg)lg.style.display=viewMode==="list"?"none":"";
   const byM={}; ids.forEach(id=>{const m=+dateOf(id,data[id]).slice(5,7)-1;(byM[m]=byM[m]||[]).push(id)});
   const rowHtml=id=>{const w=data[id],k=dateOf(id,w),m=+k.slice(5,7)-1;
-    return `<div class="row" style="--mc:${MC[m]}" data-k="${k}"><div class="dt">${fmtShort(k)}</div><div class="who">${esc(w.couple||"Пара не указана")}${kindOf(w)==="content"?`<span class="kchip">Контент</span>`:""}${w.label?`<span class="label">${esc(w.label)}</span>`:""}${w.todo?`<span class="flag">● уточнить</span>`:""}${w.paid?`<span class="pd">✓ оплачено</span>`:""}<small>${esc([w.venue,w.organizer,w.package].filter(Boolean).join(" · ")||"—")}</small></div></div>`};
+    return `<div class="row" style="--mc:${MC[m]}" data-k="${k}"><div class="dt">${fmtShort(k)}</div><div class="who">${esc(w.couple||"Пара не указана")}${kindOf(w)==="content"?`<span class="kchip">Контент</span>`:""}${w.label?`<span class="label">${esc(w.label)}</span>`:""}${w.todo?`<span class="flag">● уточнить</span>`:""}${w.paid?`<span class="pd">✓ оплачено</span>`:""}<small>${esc([w.venue,w.organizer,fmtPkg(w.package)].filter(Boolean).join(" · ")||"—")}</small></div></div>`};
   $("list").innerHTML=ids.length?Object.keys(byM).map(Number).sort((a,b)=>a-b).map(m=>`<div class="lmonth"><div class="lhead"><span class="lname" style="color:${MC[m]}">${MONTHS[m]}</span><span class="lcount">${byM[m].length} ${plural(byM[m].length)}</span></div><div class="list2">${byM[m].map(rowHtml).join("")}</div></div>`).join("")
     :`<div class="empty-start">В ${year} году пока нет свадеб. Нажми на любую дату в календаре, чтобы добавить первую.${Object.keys(data).length?"":`<button class="btn" onclick="onboarding()">Как это работает?</button>`}</div>`;
   const ws=ids.map(id=>data[id]);
@@ -578,7 +579,7 @@ function card(id){
    <div class="pane" data-pane="info">
    ${warn.length?`<div class="warn">Не заполнено: ${warn.join(", ")}</div>`:""}
    <div class="fields">${FIELDS.slice(1,5).map(([f,l])=>`<div class="f"><span>${f==="organizer"&&w.orgRole==="coordinator"?"Координатор":l}</span><b class="${w[f]?"":"none"}">${esc(w[f]||"не указано")}</b></div>`).join("")}
-    <div class="f"><span>Пакет</span><b class="${w.package?"":"none"}">${esc(w.package||"не указано")}</b></div>
+    <div class="f"><span>Пакет</span><b class="${w.package?"":"none"}">${esc(fmtPkg(w.package)||"не указано")}</b></div>
    </div>
    ${w.notes?`<div class="note">${esc(w.notes)}</div>`:""}
    </div>
@@ -650,8 +651,8 @@ function edit(id,k){
     <input name="organizer" value="${esc(w.organizer??"")}" placeholder="Имя">
     ${inp("venue","Площадка")}
     <div class="two"><div>${inp("photographer","Фотограф")}</div><div>${inp("host","Ведущий")}</div></div>
-    <label>Пакет</label><input name="package" list="pkglist" value="${esc(w.package??"")}" placeholder="Выбери из своих пакетов или впиши">
-    <datalist id="pkglist">${SETTINGS.packages.map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist>
+    <label>Пакет</label><input name="package" list="pkglist" value="${esc(fmtPkg(w.package))}" placeholder="Выбери из своих пакетов или впиши">
+    <datalist id="pkglist">${SETTINGS.packages.map(p=>`<option value="${esc(fmtPkg(p.name))}">`).join("")}</datalist>
     <div class="hint" id="pkghint"></div>
     ${inp("deliverables","Что нужно отдать","рилс, клип, фильм…")}<div class="hint">Через запятую — каждое станет отдельной меткой</div>
     <div class="two"><div><label>Рилсы — дней после свадьбы</label><input name="reelsDays" inputmode="numeric" value="${w.reelsDays??""}" placeholder="из пакета"></div><div><label>Клип/фильм — месяцев</label><input name="finalMonths" inputmode="numeric" value="${w.finalMonths??""}" placeholder="из пакета"></div></div><div class="hint">Пусто — сроки берутся из пакета (⚙︎ Мои пакеты)</div>
@@ -818,7 +819,7 @@ function pkgSheet(){
     $("sheet").innerHTML=`<div class="shead"><div><div class="stitle">Мои пакеты</div></div><button class="x" onclick="closeSheet()">✕</button></div>
     <div class="io"><p>Опиши свои пакеты: через сколько дней сдаёшь рилсы и через сколько месяцев клип/фильм, что входит и цену. Когда выберешь пакет в свадьбе, сроки и «что отдать» подставятся сами. Если чего-то в пакете нет — оставь поле пустым.</p></div>
     <div id="pks">${rows.length?"":`<div class="pkempty">Пока нет ни одного пакета.<br>Нажми «+ Добавить пакет» и опиши первый.</div>`}${rows.map((p,i)=>`<div class="pk" data-i="${i}">
-      <label>Название</label><input data-f="name" value="${esc(p.name)}" placeholder="Например: Пакет №1, Стандарт, Контент">
+      <label>Название</label><input data-f="name" value="${esc(p.name)}" placeholder="Например: Пакет #1, Стандарт, Контент">
       <label>Кем снимаю</label><div class="seg kind pkkind" data-i="${i}"><button type="button" data-k="video" class="${p.kind!=="content"?"on":""}">🎥 Видеограф</button><button type="button" data-k="content" class="${p.kind==="content"?"on":""}">📱 Контент-мейкер</button></div>
       <div class="row3"><div><label>Рилсы, дней</label><input data-f="reelsDays" inputmode="numeric" value="${p.reelsDays??""}" placeholder="0 — нет"></div>
       <div><label>Клип/фильм, мес.</label><input data-f="finalMonths" inputmode="numeric" value="${p.finalMonths??""}" placeholder="0 — нет"></div>
