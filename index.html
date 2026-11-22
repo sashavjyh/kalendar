@@ -243,13 +243,98 @@
   .row .dt,.qline b{font-weight:500!important}
   .money b{font-weight:500!important;font-size:14px!important;white-space:nowrap}
   @media (max-width:420px){h1{font-size:23px!important}}
+
+  /* ===== редизайн 2026-11: заглавные, центр, ровные отступы, единые скругления ===== */
+  :root{--gap:16px;--r:18px;--line:#26262b}
+  .up,h1,.mname,.mcount,.lmonth h3,#listTitle,.stat span,.seg2 button,.pkbtn,.wd,.legend,.f span,.money span,.tabs button,.plabel,.sheet .sdate,.ssub,.btn.danger,.actions .btn{text-transform:uppercase}
+  /* шапка */
+  header{display:grid!important;grid-template-columns:38px 1fr 38px;align-items:center;margin-bottom:var(--gap)!important}
+  header h1{text-align:center;font-size:21px!important;letter-spacing:.01em!important}
+  @media (max-width:360px){header h1{font-size:18px!important}}
+  .status{margin:0 0 var(--gap)!important;text-align:center}
+  .status:empty{display:none}
+  /* единые скругления и рамки */
+  .quick,.stat,.month,.row,.fields,.money div,.note,.pk,.seg2,.empty-start,.setup,.todo-box,.pkempty,.steps div,.io textarea{border-radius:var(--r)!important}
+  .quick,.stat,.month,.row,.fields,.money div,.note,.seg2,.pkbtn,.x,.yearnav button{border-color:var(--line)!important}
+  /* блок дат */
+  .quick{padding:18px!important;margin-bottom:var(--gap)!important}
+  .qgrid{display:grid;grid-template-columns:minmax(96px,max-content) 1fr;column-gap:16px;row-gap:8px;align-items:baseline}
+  .qgrid b{font-family:'Unbounded','Golos Text',sans-serif;font-weight:500;font-size:14px;letter-spacing:.02em;text-transform:uppercase}
+  .qgrid span{font-size:17px;line-height:1.45}
+  .qgrid span:nth-child(2){padding-right:112px}
+  /* плитки статистики */
+  .stats{gap:var(--gap)!important;margin-bottom:var(--gap)!important}
+  .stat{text-align:center;padding:14px 12px!important}
+  .stat.scount{display:block!important}
+  .stat.scount b{display:inline!important}
+  .stat.scount #sCountLab{font-size:13px!important;font-weight:600;letter-spacing:.06em;margin-left:8px}
+  .stat.scount .split{display:block!important;margin:6px 0 0!important;font-size:11px!important;letter-spacing:.05em}
+  .stat span{font-size:11px!important;letter-spacing:.05em}
+  .stat.secret span{display:block;margin-top:4px}
+  /* переключатели */
+  .viewbar{gap:var(--gap)!important;margin:0 0 var(--gap)!important}
+  .viewbar .segs{gap:var(--gap)!important}
+  .viewbar .seg2 button{font-size:11px!important;letter-spacing:.03em;padding:9px 2px!important}
+  .seg2 button.on{border-radius:14px}
+  .pkbtn{font-size:11px!important;letter-spacing:.04em;padding:11px 20px!important}
+  .setup{margin:0 0 var(--gap)!important}
+  /* календарь */
+  .months{gap:var(--gap)!important}
+  .mhead{align-items:baseline!important;margin:2px 4px 12px!important}
+  .mname{background:none!important;padding:0!important;font-size:19px!important;letter-spacing:.01em!important}
+  .mcount{font-size:11px;letter-spacing:.06em}
+  .wd{text-transform:uppercase;font-size:9.5px;letter-spacing:.05em}
+  /* легенда */
+  .legend{justify-content:center;gap:4px 14px!important;margin-top:var(--gap)!important;font-size:10.5px!important;letter-spacing:.04em;color:var(--dim)!important}
+  .legend i{width:9px!important;height:9px!important;border-radius:50%!important;margin-right:5px!important;vertical-align:-1px!important}
+  .lg-fill{background:#8c8c96}.lg-ring{border:1.5px solid #8c8c96}.lg-dot{background:#fff;width:6px!important;height:6px!important}.lg-todo{border:1.5px solid #ffd60a}
+  .lg-hint{flex-basis:100%;text-align:center;margin-top:2px}
+  /* список */
+  h2#listTitle{text-align:center;font-size:19px!important;font-weight:500!important;margin:30px 0 var(--gap)!important;letter-spacing:.01em!important}
+  .lmonth{text-align:center;margin-bottom:28px!important}
+  .lmonth h3{font-size:12px!important;letter-spacing:.05em!important;padding:6px 14px!important;border-radius:12px!important;margin-bottom:10px!important}
+  .list2{gap:10px!important;text-align:left}
+  .row{padding:13px 16px!important}
+  .kchip{color:var(--mc)!important}
+  /* нижние кнопки — тише */
+  .tools{justify-content:center;margin-top:8px!important}
+  .tools .btn{flex:0 1 auto!important;background:none!important;color:var(--muted)!important;font-size:12px!important;font-weight:600!important;padding:10px 12px!important}
+  /* карточка свадьбы */
+  .sheet .shead .sdate{background:none!important;padding:0!important;margin:0 auto 4px!important;font-size:19px!important;letter-spacing:.01em!important}
+  .ssub{font-size:11px;color:var(--muted);letter-spacing:.06em;margin-bottom:6px}
+  .wcard h4{text-align:center;font-size:19px!important;margin-bottom:12px!important}
+  .wcard h4 .plabel{display:block;font-size:10px;letter-spacing:.08em;color:var(--dim);margin:0 0 4px}
+  .wcard .kchip,.wcard .label{vertical-align:3px}
+  .warn{width:fit-content;margin:0 auto 12px!important;border-radius:999px!important;padding:5px 12px!important;font-size:11px!important}
+  .tabs{border-radius:14px!important}
+  .tabs button{font-size:11px!important;letter-spacing:.04em;border-radius:11px!important}
+  .f span{font-size:10.5px;letter-spacing:.06em;align-self:center}
+  .money div{text-align:center;padding:10px 6px!important}
+  .money span{font-size:10px!important;letter-spacing:.05em}
+  .checks{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px;margin:4px 0 12px}
+  .checks:empty{display:none}
+  .chk{border:none!important;border-radius:0!important;background:none!important;color:var(--text)!important;padding:12px 0!important;margin:0!important;font-weight:500!important;font-size:13.5px!important}
+  .checks .chk+.chk{border-top:1px solid var(--line)!important}
+  .chk .circ{width:20px!important;height:20px!important;border:2px solid var(--mc)!important;background:transparent!important;color:transparent!important;font-size:12px!important}
+  .chk.on .circ{background:var(--mc)!important;border-color:var(--mc)!important;color:#0b0b0d!important}
+  .chk.on{color:var(--mc)!important}
+  .pane[data-pane="money"]>.chk{background:var(--card)!important;border:1px solid var(--line)!important;border-radius:var(--r)!important;padding:12px 14px!important}
+  .actions{align-items:center}
+  .btn.danger{border:none!important;font-size:12px!important;letter-spacing:.05em;padding:14px 10px!important}
+  .actions .btn.primary{font-size:13px!important;letter-spacing:.05em;border-radius:16px!important}
+  .f .tag{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;color:var(--text)!important;align-self:auto!important}
+  .f.pkg>span{align-self:flex-start!important}
+  .addmore{background:transparent!important;border:1px dashed var(--line)!important;color:var(--muted)!important;font-size:12px!important;font-weight:600!important;text-transform:uppercase;letter-spacing:.04em;padding:13px!important;border-radius:16px!important}
+  @media (max-width:370px){.stat span{font-size:10px!important;letter-spacing:.02em!important}.viewbar .seg2 button{font-size:10px!important;letter-spacing:0!important}.qgrid{column-gap:12px;grid-template-columns:minmax(88px,max-content) 1fr}.qgrid span{font-size:16px}.qgrid b{font-size:13px}}
+  .sheet .shead .stitle{font-size:12px!important;font-family:'Golos Text',sans-serif!important;font-weight:600!important;text-transform:uppercase;letter-spacing:.06em!important;color:var(--muted);margin-top:6px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
+    <div class="yearnav"><button id="prev" aria-label="Прошлый год">‹</button></div>
     <h1 id="title">Свадьбы</h1>
-    <div class="yearnav"><button id="prev" aria-label="Прошлый год">‹</button><button id="next" aria-label="Следующий год">›</button></div>
+    <div class="yearnav"><button id="next" aria-label="Следующий год">›</button></div>
   </header>
   <div class="status" id="status">Загружаю…</div>
   <div class="tgnote" id="tgnote" hidden>Ты открыл календарь не через Telegram — записи сохраняются только в этом браузере. Открой бота <b>@videograf_kalendar_bot</b>, чтобы календарь был с тобой везде.</div>
@@ -262,18 +347,18 @@
   <div class="viewbar">
     <div class="segs">
       <div class="seg2" id="vMode"><button data-v="cal">Календарь</button><button data-v="list">Список</button></div>
-      <div class="seg2" id="vSeason"><button data-s="season">Только сезон</button><button data-s="all">Весь год</button></div>
+      <div class="seg2" id="vSeason"><button data-s="season">Сезон</button><button data-s="all">Весь год</button></div>
     </div>
     <button class="pkbtn" id="bSettings">⚙︎ Мои пакеты</button>
   </div>
   <div class="setup" id="setupBanner" hidden><b>Настрой свои пакеты</b>Укажи, какие у тебя пакеты, через сколько сдаёшь рилсы и клип/фильм — и календарь сам посчитает сроки по каждой свадьбе.<button class="btn primary" id="setupGo">Настроить пакеты</button></div>
   <div class="months" id="months"></div>
   <div class="legend">
-    <span><i style="background:#ff9f0a"></i>залито — видеограф</span>
-    <span><i style="background:transparent;border:2px solid #ff9f0a"></i>обведено — контент</span>
-    <span><i style="background:#fff;border-radius:50%;width:8px;height:8px"></i>не все данные заполнены</span>
-    <span><i style="background:transparent;border:2px solid #ffd60a"></i>нужно что-то уточнить</span>
-    <span>Нажми на свободную дату, чтобы добавить свадьбу</span>
+    <span><i class="lg-fill"></i>видео</span>
+    <span><i class="lg-ring"></i>контент</span>
+    <span><i class="lg-dot"></i>не заполнено</span>
+    <span><i class="lg-todo"></i>уточнить</span>
+    <div class="lg-hint">нажми на свободную дату, чтобы добавить свадьбу</div>
   </div>
   <h2 id="listTitle">Все свадьбы года</h2>
   <div class="list" id="list"></div>
@@ -334,6 +419,7 @@ const MONTHS=["Январь","Февраль","Март","Апрель","Май"
 const MONTHS_GEN=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const MC=["#64d2ff","#e040fb","#5e5ce6","#30d158","#0a84ff","#ff9f0a","#ff375f","#40c8b0","#bf5af2","#ff6b3d","#ffd60a","#a2845e"];
 const WD=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+const WD_FULL=["понедельник","вторник","среда","четверг","пятница","суббота","воскресенье"];
 const FIELDS=[["couple","Пара"],["organizer","Организатор"],["venue","Площадка"],["photographer","Фотограф"],["host","Ведущий"],["package","Пакет"]];
 
 const TGW=(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initData)?Telegram.WebApp:null;
@@ -411,7 +497,7 @@ function render(){
     const first=(new Date(year,m,1).getDay()+6)%7, days=new Date(year,m+1,0).getDate();
     const cnt=ids.filter(id=>+dateOf(id,data[id]).slice(5,7)===m+1).length;
     if(season==="season"&&anyThisYear&&!cnt)continue;
-    html+=`<div class="month" id="m${m}" style="--mc:${MC[m]}"><div class="mhead"><span class="mname" style="color:${MC[m]};background:${MC[m]}22">${MONTHS[m]}</span><span class="mcount">${cnt?cnt+" "+plural(cnt):""}</span></div><div class="grid">`;
+    html+=`<div class="month" id="m${m}" style="--mc:${MC[m]}"><div class="mhead"><span class="mname" style="color:${MC[m]}">${MONTHS[m]}</span><span class="mcount">${cnt?cnt+" "+plural(cnt):""}</span></div><div class="grid">`;
     html+=WD.map(w=>`<div class="wd">${w}</div>`).join("");
     for(let i=0;i<first;i++) html+="<div></div>";
     for(let d=1;d<=days;d++){
@@ -434,7 +520,7 @@ function render(){
   const byM={}; ids.forEach(id=>{const m=+dateOf(id,data[id]).slice(5,7)-1;(byM[m]=byM[m]||[]).push(id)});
   const rowHtml=id=>{const w=data[id],k=dateOf(id,w),m=+k.slice(5,7)-1;
     return `<div class="row" style="--mc:${MC[m]}" data-k="${k}"><div class="dt">${fmtShort(k)}</div><div class="who">${esc(w.couple||"Пара не указана")}${kindOf(w)==="content"?`<span class="kchip">Контент</span>`:""}${w.label?`<span class="label">${esc(w.label)}</span>`:""}${w.todo?`<span class="flag">● уточнить</span>`:""}${w.paid?`<span class="pd">✓ оплачено</span>`:""}<small>${esc([w.venue,w.organizer].filter(Boolean).join(" · ")||"—")}</small></div></div>`};
-  $("list").innerHTML=ids.length?Object.keys(byM).map(Number).sort((a,b)=>a-b).map(m=>`<div class="lmonth"><h3 style="color:${MC[m]};background:${MC[m]}22">${MONTHS[m]}<span>${byM[m].length} ${plural(byM[m].length)}</span></h3><div class="list2">${byM[m].map(rowHtml).join("")}</div></div>`).join("")
+  $("list").innerHTML=ids.length?Object.keys(byM).map(Number).sort((a,b)=>a-b).map(m=>`<div class="lmonth"><h3 style="color:${MC[m]};background:${MC[m]}22">${MONTHS[m]} · ${byM[m].length} ${plural(byM[m].length)}</h3><div class="list2">${byM[m].map(rowHtml).join("")}</div></div>`).join("")
     :`<div class="empty-start">В ${year} году пока нет свадеб. Нажми на любую дату в календаре, чтобы добавить первую.${Object.keys(data).length?"":`<button class="btn" onclick="onboarding()">Как это работает?</button>`}</div>`;
   const ws=ids.map(id=>data[id]);
   { const nc=ids.filter(id=>kindOf(data[id])==="content").length, nv=ids.length-nc;
@@ -480,8 +566,8 @@ function card(id){
   const w=data[id], k=dateOf(id,w), c=color(k);
   const tags=String(w.deliverables||"").split(/[,;]+/).map(s=>s.trim()).filter(Boolean);
   const warn=[]; if(!w.couple||w.couple.trim().endsWith(" и"))warn.push("имя пары"); if(!w.venue)warn.push("площадка"); if(!w.photographer)warn.push("фотограф");
-  return `<div class="wcard">
-   <h4><span class="plabel">Пара:</span>${esc(w.couple||"не указана")}${kindOf(w)==="content"?`<span class="kchip">Контент</span>`:""}${w.label?`<span class="label">${esc(w.label)}</span>`:""}</h4>
+  return `<div class="wcard" style="--mc:${c}">
+   <h4><span class="plabel">Пара</span>${esc(w.couple||"не указана")}${kindOf(w)==="content"?`<span class="kchip">Контент</span>`:""}${w.label?`<span class="label">${esc(w.label)}</span>`:""}</h4>
    ${w.todo?`<div class="todo-box"><b>Уточнить</b>${esc(w.todo)}${canWrite?`<button class="btn tododone" data-done="${esc(id)}">✓ Уточнено — убрать пометку</button>`:""}</div>`:""}
    ${(()=>{const r=reelsInfo(id),f=finalInfo(id);const giveDue=(r&&!r.done&&r.cls)||(f&&!f.done&&f.cls&&f.cls!=="ok");const payDue=!w.paid&&(+w.balance||0)>0&&dateOf(id,w)<=todayKey();
      return `<div class="tabs" data-tabs="${esc(id)}"><button data-tab="info">Инфо${warn.length?"<i></i>":""}</button><button data-tab="give">Сдача${giveDue?"<i></i>":""}</button><button data-tab="money">Деньги${payDue?"<i></i>":""}</button></div>`})()}
@@ -493,7 +579,6 @@ function card(id){
    ${w.notes?`<div class="note">${esc(w.notes)}</div>`:""}
    </div>
    <div class="pane" data-pane="give">
-   <div class="stages">${STAGES.map(([v,l])=>`<button class="stg ${stageOf(id)===v?"on":""}" ${stageOf(id)===v?`style="background:${STAGE_COLOR[v]}"`:""} ${canWrite?`data-stage="${v}" data-sid="${esc(id)}"`:"disabled"}>${l}</button>`).join("")}</div>
    <div class="checks">${[["reels",reelsInfo(id),"⏱"],["final",finalInfo(id),"🎬"]].filter(x=>x[1]).map(([t,r,ic])=>`<div class="chk ${r.done?"on":""}" ${canWrite?`data-chk="${t}" data-cid="${esc(id)}"`:""}><span class="circ">✓</span><span class="${r.cls==="late"?"late":""}">${ic} ${r.text}</span></div>`).join("")}</div>
    <div class="fields givebox"><div class="f pkg"><span>Нужно отдать</span>${tags.length?`<div class="tags">${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:`<b class="none" style="text-align:left">не указано</b>`}</div></div>
    </div>
@@ -501,14 +586,14 @@ function card(id){
    <div class="money"><div><b>${money(w.prepay)}</b><span>предоплата</span></div><div><b>${money(w.balance)}</b><span>остаток</span></div><div><b>${money(w.agency)}</b><span>агентские</span></div></div>
    <div class="chk ${w.paid?"on":""}" ${canWrite?`data-chk="paid" data-cid="${esc(id)}"`:""}><span class="circ">✓</span><span>${w.paid?`Оплачено полностью${w.paidDate?" · "+fmtFull(w.paidDate):""}`:`Остаток получен — оплачено полностью`}</span></div>
    </div>
-   ${canWrite?`<div class="actions"><button class="btn danger" data-del="${esc(id)}">Удалить свадьбу</button><button class="btn primary" data-ed="${esc(id)}" style="background:${c}">Редактировать</button></div>`:""}
+   ${canWrite?`<div class="actions"><button class="btn danger" data-del="${esc(id)}">Удалить</button><button class="btn primary" data-ed="${esc(id)}" style="background:${c}">Редактировать</button></div>`:""}
   </div>`;
 }
 function view(k){
   const ids=byDate()[k]||[]; if(!ids.length){closeSheet();return}
   const c=color(k);
   $("sheet").innerHTML=`
-   <div class="shead"><div><span class="sdate" style="color:${c};background:${c}22">${human(k)}</span>${ids.length>1?`<div class="stitle">${ids.length} ${plural(ids.length)} в этот день</div>`:""}</div><button class="x" onclick="closeSheet()">✕</button></div>
+   <div class="shead"><div><span class="sdate" style="color:${c}">${human(k)}</span><div class="ssub">${[WD_FULL[(new Date(k+"T12:00").getDay()+6)%7],ids.length===1?data[ids[0]].venue:""].filter(Boolean).map(esc).join(" · ")}</div>${ids.length>1?`<div class="stitle">${ids.length} ${plural(ids.length)} в этот день</div>`:""}</div><button class="x" onclick="closeSheet()">✕</button></div>
    ${ids.map(card).join("")}
    ${canWrite?`<button class="btn addmore" id="addmore">+ Ещё одна свадьба в этот день</button>`:""}
    <div class="err" id="err"></div>`;
@@ -519,7 +604,7 @@ function view(k){
   $("sheet").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>edit(b.dataset.ed,k));
   $("sheet").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
     if(b.dataset.armed){remove(b.dataset.del,k);return}
-    b.dataset.armed="1";b.textContent="Удалить всю свадьбу?";setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent="Удалить свадьбу"}},4000);
+    b.dataset.armed="1";b.textContent="Точно удалить?";setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent="Удалить"}},4000);
   });
   const am=$("addmore"); if(am)am.onclick=()=>edit(null,k);
   const patch=async(id,fn,b)=>{const o={...data[id]};fn(o);if(b)b.disabled=true;haptic();
@@ -544,10 +629,10 @@ function view(k){
 function edit(id,k){
   const w=(id&&data[id])||{}, c=color(k), isNew=!id;
   const hasOthers=(byDate()[k]||[]).length>0;
-  if(!canWrite){ $("sheet").innerHTML=`<div class="shead"><div><span class="sdate" style="color:${c};background:${c}22">${human(k)}</span><div class="stitle">Дата свободна</div></div><button class="x" onclick="closeSheet()">✕</button></div>`; return }
+  if(!canWrite){ $("sheet").innerHTML=`<div class="shead"><div><span class="sdate" style="color:${c}">${human(k)}</span><div class="stitle">Дата свободна</div></div><button class="x" onclick="closeSheet()">✕</button></div>`; return }
   const inp=(f,l,ph="")=>`<label>${l}</label><input name="${f}" value="${esc(w[f]??"")}" placeholder="${ph}">`;
   $("sheet").innerHTML=`
-   <div class="shead"><div><span class="sdate" style="color:${c};background:${c}22">${human(k)}</span><div class="stitle">${isNew?"Новая свадьба":"Редактирование"}</div></div><button class="x" type="button" onclick="closeSheet()">✕</button></div>
+   <div class="shead"><div><span class="sdate" style="color:${c}">${human(k)}</span><div class="stitle">${isNew?"Новая свадьба":"Редактирование"}</div></div><button class="x" type="button" onclick="closeSheet()">✕</button></div>
    <form id="frm" autocomplete="off">
     ${inp("couple","Пара","Имя и имя")}
     ${inp("label","Метка","например: Мише отдать, Infinity")}
@@ -619,7 +704,7 @@ function quickText(){const by=yearDatesByMonth();return Object.keys(by).map(Numb
 function renderQuick(msg,cls){
   if(quickEditing)return;
   const by=yearDatesByMonth();
-  const lines=Object.keys(by).map(Number).sort((a,b)=>a-b).map(m=>`<div class="qline"><b style="color:${MC[m]}">${MONTHS[m]}:</b> ${yearDatesHtml(m,by[m])}</div>`).join("");
+  const lines=(()=>{const ms=Object.keys(by).map(Number).sort((a,b)=>a-b);return ms.length?`<div class="qgrid">${ms.map(m=>`<b style="color:${MC[m]}">${MONTHS[m]}</b><span>${yearDatesHtml(m,by[m])}</span>`).join("")}</div>`:""})();
   $("quick").innerHTML=`<div class="qhead qfloat">${canWrite?'<button class="qbtn" id="qedit">✎ Изменить</button>':""}</div>
     ${lines||'<div class="qempty">Пока нет занятых дат. Нажми «Изменить» и впиши, например: Июнь: 5, 11, 12</div>'}
     ${(()=>{const t=Object.keys(data).filter(id=>dateOf(id,data[id])<=todayKey()&&stageOf(id)!=="done").sort((x,y)=>dateOf(x,data[x]).localeCompare(dateOf(y,data[y])));
