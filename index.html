@@ -327,6 +327,10 @@
   .addmore{background:transparent!important;border:1px dashed var(--line)!important;color:var(--muted)!important;font-size:12px!important;font-weight:600!important;text-transform:uppercase;letter-spacing:.04em;padding:13px!important;border-radius:16px!important}
   @media (max-width:370px){.stat span{font-size:10px!important;letter-spacing:.02em!important}.viewbar .seg2 button{font-size:10px!important;letter-spacing:0!important}.qgrid{column-gap:12px;grid-template-columns:minmax(88px,max-content) 1fr}.qgrid span{font-size:16px}.qgrid b{font-size:13px}}
   .sheet .shead .stitle{font-size:12px!important;font-family:'Golos Text',sans-serif!important;font-weight:600!important;text-transform:uppercase;letter-spacing:.06em!important;color:var(--muted);margin-top:6px}
+  .lmonth{text-align:left!important}
+  .lhead{display:flex;justify-content:space-between;align-items:baseline;margin:0 4px 10px}
+  .lname{font-family:'Unbounded','Golos Text',sans-serif;font-weight:500;font-size:19px;text-transform:uppercase;letter-spacing:.01em}
+  .lcount{font-size:11px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -519,8 +523,8 @@ function render(){
   const lg=document.querySelector(".legend"); if(lg)lg.style.display=viewMode==="list"?"none":"";
   const byM={}; ids.forEach(id=>{const m=+dateOf(id,data[id]).slice(5,7)-1;(byM[m]=byM[m]||[]).push(id)});
   const rowHtml=id=>{const w=data[id],k=dateOf(id,w),m=+k.slice(5,7)-1;
-    return `<div class="row" style="--mc:${MC[m]}" data-k="${k}"><div class="dt">${fmtShort(k)}</div><div class="who">${esc(w.couple||"Пара не указана")}${kindOf(w)==="content"?`<span class="kchip">Контент</span>`:""}${w.label?`<span class="label">${esc(w.label)}</span>`:""}${w.todo?`<span class="flag">● уточнить</span>`:""}${w.paid?`<span class="pd">✓ оплачено</span>`:""}<small>${esc([w.venue,w.organizer].filter(Boolean).join(" · ")||"—")}</small></div></div>`};
-  $("list").innerHTML=ids.length?Object.keys(byM).map(Number).sort((a,b)=>a-b).map(m=>`<div class="lmonth"><h3 style="color:${MC[m]};background:${MC[m]}22">${MONTHS[m]} · ${byM[m].length} ${plural(byM[m].length)}</h3><div class="list2">${byM[m].map(rowHtml).join("")}</div></div>`).join("")
+    return `<div class="row" style="--mc:${MC[m]}" data-k="${k}"><div class="dt">${fmtShort(k)}</div><div class="who">${esc(w.couple||"Пара не указана")}${kindOf(w)==="content"?`<span class="kchip">Контент</span>`:""}${w.label?`<span class="label">${esc(w.label)}</span>`:""}${w.todo?`<span class="flag">● уточнить</span>`:""}${w.paid?`<span class="pd">✓ оплачено</span>`:""}<small>${esc([w.venue,w.organizer,w.package].filter(Boolean).join(" · ")||"—")}</small></div></div>`};
+  $("list").innerHTML=ids.length?Object.keys(byM).map(Number).sort((a,b)=>a-b).map(m=>`<div class="lmonth"><div class="lhead"><span class="lname" style="color:${MC[m]}">${MONTHS[m]}</span><span class="lcount">${byM[m].length} ${plural(byM[m].length)}</span></div><div class="list2">${byM[m].map(rowHtml).join("")}</div></div>`).join("")
     :`<div class="empty-start">В ${year} году пока нет свадеб. Нажми на любую дату в календаре, чтобы добавить первую.${Object.keys(data).length?"":`<button class="btn" onclick="onboarding()">Как это работает?</button>`}</div>`;
   const ws=ids.map(id=>data[id]);
   { const nc=ids.filter(id=>kindOf(data[id])==="content").length, nv=ids.length-nc;
