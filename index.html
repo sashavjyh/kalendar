@@ -331,6 +331,9 @@
   .lhead{display:flex;justify-content:space-between;align-items:baseline;margin:0 4px 10px}
   .lname{font-family:'Unbounded','Golos Text',sans-serif;font-weight:500;font-size:19px;text-transform:uppercase;letter-spacing:.01em}
   .lcount{font-size:11px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+  .qgrid span{font-weight:500}
+  .qd{background:none;border:0;color:inherit;font:inherit;line-height:inherit;letter-spacing:inherit;padding:3px 3px;margin:-3px -3px;vertical-align:baseline;border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
+  .qd:active,.qd:hover{background:color-mix(in srgb,var(--mc) 22%,transparent)}
 </style>
 </head>
 <body>
@@ -704,12 +707,12 @@ function handleWriteErr(e){
 const MONTH_RX=[/^янв/,/^фев/,/^мар/,/^апр/,/^ма[йя]/,/^июн/,/^июл/,/^авг/,/^сен/,/^окт/,/^ноя/,/^дек/];
 let quickEditing=false, pendingRemove=null;
 function yearDatesByMonth(){const by={};Object.keys(byDate()).filter(k=>k.startsWith(year+"-")).sort().forEach(k=>{const m=+k.slice(5,7)-1;(by[m]=by[m]||[]).push(+k.slice(8))});return by}
-function yearDatesHtml(m,days){return days.map(d=>dateIsContent(key(year,m,d))?`${d}<span class="ct">📱</span>`:d).join(", ")}
+function yearDatesHtml(m,days){return days.map(d=>{const k=key(year,m,d);return `<button type="button" class="qd" data-open="${k}">${d}${dateIsContent(k)?`<span class="ct">📱</span>`:""}</button>`}).join(", ")}
 function quickText(){const by=yearDatesByMonth();return Object.keys(by).map(Number).sort((a,b)=>a-b).map(m=>`${MONTHS[m]}: ${by[m].join(",")}`).join("\n")}
 function renderQuick(msg,cls){
   if(quickEditing)return;
   const by=yearDatesByMonth();
-  const lines=(()=>{const ms=Object.keys(by).map(Number).sort((a,b)=>a-b);return ms.length?`<div class="qgrid">${ms.map(m=>`<b style="color:${MC[m]}">${MONTHS[m]}</b><span>${yearDatesHtml(m,by[m])}</span>`).join("")}</div>`:""})();
+  const lines=(()=>{const ms=Object.keys(by).map(Number).sort((a,b)=>a-b);return ms.length?`<div class="qgrid">${ms.map(m=>`<b style="color:${MC[m]}">${MONTHS[m]}</b><span style="color:${MC[m]};--mc:${MC[m]}">${yearDatesHtml(m,by[m])}</span>`).join("")}</div>`:""})();
   $("quick").innerHTML=`<div class="qhead qfloat">${canWrite?'<button class="qbtn" id="qedit">✎ Изменить</button>':""}</div>
     ${lines||'<div class="qempty">Пока нет занятых дат. Нажми «Изменить» и впиши, например: Июнь: 5, 11, 12</div>'}
     ${(()=>{const t=Object.keys(data).filter(id=>dateOf(id,data[id])<=todayKey()&&stageOf(id)!=="done").sort((x,y)=>dateOf(x,data[x]).localeCompare(dateOf(y,data[y])));
