@@ -334,6 +334,24 @@
   .qgrid span{font-weight:500}
   .qd{background:none;border:0;color:inherit;font:inherit;line-height:inherit;letter-spacing:inherit;padding:3px 3px;margin:-3px -3px;vertical-align:baseline;border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
   .qd:active,.qd:hover{background:color-mix(in srgb,var(--mc) 22%,transparent)}
+  /* карточка: залитые блоки (вариант 1) */
+  .sheet{background:#000!important;--fill:#1c1e23;--fill2:#2a2d35}
+  .sheet .tabs{background:var(--fill)!important;border:none!important}
+  .sheet .fields,.sheet .checks,.sheet .money div,.sheet .pane[data-pane="money"]>.chk,.sheet .note,.sheet .todo-box{background:var(--fill)!important;border:none!important;border-radius:22px!important}
+  .sheet .f{border-bottom:none!important;padding:13px 16px!important}
+  .sheet .f+.f{border-top:1px solid #000!important;margin:0}
+  .sheet .fields{overflow:hidden}
+  .sheet .checks{padding:0 16px!important}
+  .sheet .checks .chk+.chk{border-top:1px solid #000!important}
+  .sheet .checks .chk{padding:13px 0!important}
+  .sheet .tag{background:var(--fill2)!important;border:none!important;border-radius:10px!important}
+  .sheet .givebox .f{padding:14px 16px!important}
+  .ctx{display:flex;flex-direction:column;gap:2px;font-weight:600;font-size:14px;line-height:1.3}
+  .ctx small{font-size:11.5px;font-weight:500;color:var(--muted)}
+  .ctx small.late{color:var(--danger)}.ctx small.soon{color:#ffd60a}
+  .chk.on .ctx small{color:var(--mc);opacity:.8}
+  .sheet .money div{border-radius:18px!important}
+  .sheet .addmore{border-color:#2a2d35!important}
 </style>
 </head>
 <body>
@@ -473,9 +491,9 @@ function finalInfo(id){
   if(!n)return null;
   const done=!!w.finalDone||w.stage==="done";
   const due=addMonths(k,n), left=daysBetween(todayKey(),due);
-  if(done) return {done,cls:"",due,text:`Клип/фильм сдан (срок был до ${fmtFull(due)})`};
-  if(left<0) return {done,cls:"late",due,text:`Клип/фильм просрочен — срок был ${fmtFull(due)}`};
-  return {done,cls:k>todayKey()?"":(left<=30?"soon":"ok"),due,text:`Клип/фильм сдать до ${fmtFull(due)} (${n} мес. после свадьбы)${k<=todayKey()?` — осталось ${left} дн.`:""}`};
+  if(done) return {done,cls:"",due,text:`Клип/фильм сдан (срок был до ${fmtFull(due)})`,sub:`сдан · срок был до ${fmtFull(due)}`};
+  if(left<0) return {done,cls:"late",due,text:`Клип/фильм просрочен — срок был ${fmtFull(due)}`,sub:`просрочен · срок был ${fmtFull(due)}`};
+  return {done,cls:k>todayKey()?"":(left<=30?"soon":"ok"),due,text:`Клип/фильм сдать до ${fmtFull(due)} (${n} мес. после свадьбы)${k<=todayKey()?` — осталось ${left} дн.`:""}`,sub:`до ${fmtFull(due)} · ${k<=todayKey()?`осталось ${left} дн.`:`${n} мес. после свадьбы`}`};
 }
 function stageOf(id){const w=data[id];return w.stage||(dateOf(id,w)<todayKey()?"shot":"planned")}
 function reelsInfo(id){
@@ -483,10 +501,10 @@ function reelsInfo(id){
   if(!hasReels(w))return null;
   const done=!!w.reelsDone||["reels","editing","done"].includes(w.stage);
   const nd=reelsDaysOf(w), due=addDays(k,nd), left=daysBetween(todayKey(),due);
-  if(done) return {done,cls:"",text:`Рилсы сданы (срок был до ${fmtShort(due)})`,left,due};
-  if(k>todayKey()) return {done,cls:"",text:`Рилсы сдать до ${fmtShort(due)} (${nd} дней после свадьбы)`,left,due};
-  if(left<0) return {done,cls:"late",text:`Рилсы просрочены на ${-left} дн. — срок был ${fmtShort(due)}`,left,due};
-  return {done,cls:left<=2?"soon":"ok",text:left===0?`Рилсы сдать сегодня!`:`Рилсы сдать до ${fmtShort(due)} — осталось ${left} дн.`,left,due};
+  if(done) return {done,cls:"",text:`Рилсы сданы (срок был до ${fmtShort(due)})`,sub:`сданы · срок был до ${fmtShort(due)}`,left,due};
+  if(k>todayKey()) return {done,cls:"",text:`Рилсы сдать до ${fmtShort(due)} (${nd} дней после свадьбы)`,sub:`до ${fmtShort(due)} · ${nd} дн. после свадьбы`,left,due};
+  if(left<0) return {done,cls:"late",text:`Рилсы просрочены на ${-left} дн. — срок был ${fmtShort(due)}`,sub:`просрочены на ${-left} дн. · срок был ${fmtShort(due)}`,left,due};
+  return {done,cls:left<=2?"soon":"ok",text:left===0?`Рилсы сдать сегодня!`:`Рилсы сдать до ${fmtShort(due)} — осталось ${left} дн.`,sub:left===0?"сдать сегодня!":`до ${fmtShort(due)} · осталось ${left} дн.`,left,due};
 }
 function human(k){const [y,m,d]=k.split("-").map(Number);return `${d} ${MONTHS_GEN[m-1]} ${y}`}
 function fmtShort(k){const [y,m,d]=k.split("-");return `${d}.${m}`}
@@ -587,7 +605,7 @@ function card(id){
    ${w.notes?`<div class="note">${esc(w.notes)}</div>`:""}
    </div>
    <div class="pane" data-pane="give">
-   <div class="checks">${[["reels",reelsInfo(id),"⏱"],["final",finalInfo(id),"🎬"]].filter(x=>x[1]).map(([t,r,ic])=>`<div class="chk ${r.done?"on":""}" ${canWrite?`data-chk="${t}" data-cid="${esc(id)}"`:""}><span class="circ">✓</span><span class="${r.cls==="late"?"late":""}">${ic} ${r.text}</span></div>`).join("")}</div>
+   <div class="checks">${[["reels",reelsInfo(id),"⏱"],["final",finalInfo(id),"🎬"]].filter(x=>x[1]).map(([t,r,ic])=>`<div class="chk ${r.done?"on":""}" ${canWrite?`data-chk="${t}" data-cid="${esc(id)}"`:""}><span class="circ">✓</span><span class="ctx">${t==="reels"?"Рилсы":"Клип / фильм"}<small class="${r.cls||""}">${r.sub||r.text}</small></span></div>`).join("")}</div>
    <div class="fields givebox"><div class="f pkg"><span>Нужно отдать</span>${tags.length?`<div class="tags">${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:`<b class="none" style="text-align:left">не указано</b>`}</div></div>
    </div>
    <div class="pane" data-pane="money">
