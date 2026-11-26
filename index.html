@@ -361,6 +361,9 @@
   .addx{width:100%;margin-top:12px;background:transparent;border:1px dashed var(--line);color:var(--text);border-radius:12px;padding:12px;font:700 12px 'Golos Text',system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
   .xchips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
   .xchip{background:transparent;border:1px dashed #3a3d46;border-radius:99px;padding:6px 11px;color:#c9ccd4;font:500 12.5px 'Golos Text',system-ui,sans-serif;cursor:pointer}
+  .stat.sagency{grid-column:1/-1;display:flex!important;justify-content:space-between;align-items:center;text-align:left!important;padding:12px 18px!important}
+  .stat.sagency span{margin:0!important;display:inline!important}
+  .stat.sagency b{font-size:16px!important;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -377,6 +380,7 @@
     <div class="stat scount"><b id="sCount">—</b><span id="sCountLab">свадеб</span></div>
     <div class="stat secret hidden" data-secret><b id="sBal">—</b><span>ждём</span></div>
     <div class="stat secret hidden" data-secret><b id="sPre">—</b><span>получено</span></div>
+    <div class="stat secret hidden sagency" data-secret id="sAgW"><span>агентские за сезон</span><b id="sAg">—</b></div>
   </div>
   <div class="viewbar">
     <div class="segs">
@@ -566,10 +570,11 @@ function render(){
     $("sCountLab").innerHTML=plural(ws.length)+(nc?`<span class="split">🎥 ${nv} видео · 📱 ${nc} контент</span>`:""); }
   $("sBal").textContent=money(ws.reduce((s,w)=>s+(w.paid?0:(+w.balance||0)),0));
   $("sPre").textContent=money(ws.reduce((s,w)=>s+(+w.prepay||0)+(w.paid?(+w.balance||0):0),0));
+  { const ag=ws.reduce((s,w)=>s+(+w.agency||0),0); $("sAg").textContent=money(ag); $("sAgW").style.display=ag?"":"none"; }
   renderQuick();
   fitStats();
 }
-function fitStats(){document.querySelectorAll(".stat:not(.scount) b").forEach(b=>{let f=19;b.style.setProperty("font-size",f+"px","important");
+function fitStats(){document.querySelectorAll(".stat:not(.scount):not(.sagency) b").forEach(b=>{let f=19;b.style.setProperty("font-size",f+"px","important");
   const box=b.parentElement;const max=box.clientWidth-parseFloat(getComputedStyle(box).paddingLeft)-parseFloat(getComputedStyle(box).paddingRight);
   while(b.scrollWidth>max&&f>10){f-=.5;b.style.setProperty("font-size",f+"px","important")}})}
 window.addEventListener("resize",fitStats);
