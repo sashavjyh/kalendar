@@ -352,6 +352,15 @@
   .chk.on .ctx small{color:var(--mc);opacity:.8}
   .sheet .money div{border-radius:18px!important}
   .sheet .addmore{border-color:#2a2d35!important}
+  .fempty{background:var(--fill,#1c1e23);border-radius:22px;padding:16px;text-align:center;color:var(--muted);font-size:13px}
+  #extras .xrow{margin-top:10px}
+  .xrow .xn{font-weight:600}
+  .xrow .xv{display:flex;gap:8px;margin-top:6px}
+  .xrow .xv input{flex:1}
+  .xdel{flex:none;width:44px;border:none;border-radius:12px;background:var(--card2);color:var(--danger);font-size:22px;font-weight:700;cursor:pointer}
+  .addx{width:100%;margin-top:12px;background:transparent;border:1px dashed var(--line);color:var(--text);border-radius:12px;padding:12px;font:700 12px 'Golos Text',system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+  .xchips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+  .xchip{background:transparent;border:1px dashed #3a3d46;border-radius:99px;padding:6px 11px;color:#c9ccd4;font:500 12.5px 'Golos Text',system-ui,sans-serif;cursor:pointer}
 </style>
 </head>
 <body>
@@ -460,6 +469,9 @@ const pad=n=>String(n).padStart(2,"0");
 const key=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
 const money=n=>(n===0||n)&&n!=="" ? Number(n).toLocaleString("ru-RU")+"\u00a0₽" : "—";
 const num=v=>{const t=String(v??"").trim();return t===""?null:Number(t.replace(/[^\d]/g,""))};
+const EXTRA_DEFAULTS=["Декоратор","Стилист","DJ","Кавер-группа","Флорист","Пиротехника","Кондитер","Второй видеограф"];
+const extrasOf=w=>Array.isArray(w&&w.extra)?w.extra.filter(x=>x&&String(x.name||"").trim()&&String(x.value||"").trim()):[];
+const extraSuggest=()=>{const seen=new Set();const out=[];for(const n of [...(SETTINGS.extraNames||[]),...EXTRA_DEFAULTS]){const k=n.toLowerCase();if(!seen.has(k)){seen.add(k);out.push(n)}}return out.slice(0,12)};
 const isIncomplete=w=>!w.couple||w.couple.trim().endsWith(" и")||!w.venue;
 const dateOf=(id,w)=>(w&&w.date)||id.slice(0,10);
 const wref=id=>db.collection("weddings").doc(id);
@@ -591,7 +603,7 @@ function newId(k){ if(!data[k])return k; let i=2; while(data[k+"_"+i])i++; retur
 function card(id){
   const w=data[id], k=dateOf(id,w), c=color(k);
   const tags=String(w.deliverables||"").split(/[,;]+/).map(s=>s.trim()).filter(Boolean);
-  const warn=[]; if(!w.couple||w.couple.trim().endsWith(" и"))warn.push("имя пары"); if(!w.venue)warn.push("площадка"); if(!w.photographer)warn.push("фотограф");
+  const warn=[]; if(!w.couple||w.couple.trim().endsWith(" и"))warn.push("имя пары"); if(!w.venue)warn.push("площадка");
   return `<div class="wcard" style="--mc:${c}">
    <h4><span class="plabel">Пара</span>${esc(w.couple||"не указана")}${kindOf(w)==="content"?`<span class="kchip">Контент</span>`:""}${w.label?`<span class="label">${esc(w.label)}</span>`:""}</h4>
    ${w.todo?`<div class="todo-box"><b>Уточнить</b>${esc(w.todo)}${canWrite?`<button class="btn tododone" data-done="${esc(id)}">✓ Уточнено — убрать пометку</button>`:""}</div>`:""}
@@ -599,9 +611,8 @@ function card(id){
      return `<div class="tabs" data-tabs="${esc(id)}"><button data-tab="info">Инфо${warn.length?"<i></i>":""}</button><button data-tab="give">Сдача${giveDue?"<i></i>":""}</button><button data-tab="money">Деньги${payDue?"<i></i>":""}</button></div>`})()}
    <div class="pane" data-pane="info">
    ${warn.length?`<div class="warn">Не заполнено: ${warn.join(", ")}</div>`:""}
-   <div class="fields">${FIELDS.slice(1,5).map(([f,l])=>`<div class="f"><span>${f==="organizer"&&w.orgRole==="coordinator"?"Координатор":l}</span><b class="${w[f]?"":"none"}">${esc(w[f]||"не указано")}</b></div>`).join("")}
-    <div class="f"><span>Пакет</span><b class="${w.package?"":"none"}">${esc(fmtPkg(w.package)||"не указано")}</b></div>
-   </div>
+   ${(()=>{const rows=[...FIELDS.slice(1,5).filter(([f])=>w[f]).map(([f,l])=>[f==="organizer"&&w.orgRole==="coordinator"?"Координатор":l,w[f]]),...extrasOf(w).map(x=>[x.name,x.value]),...(w.package?[["Пакет",fmtPkg(w.package)]]:[])];
+     return rows.length?`<div class="fields">${rows.map(([l,v])=>`<div class="f"><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join("")}</div>`:`<div class="fempty">Команда пока не указана — нажми «Редактировать»</div>`})()}
    ${w.notes?`<div class="note">${esc(w.notes)}</div>`:""}
    </div>
    <div class="pane" data-pane="give">
@@ -672,6 +683,10 @@ function edit(id,k){
     <input name="organizer" value="${esc(w.organizer??"")}" placeholder="Имя">
     ${inp("venue","Площадка")}
     <div class="two"><div>${inp("photographer","Фотограф")}</div><div>${inp("host","Ведущий")}</div></div>
+    <div id="extras"></div>
+    <button type="button" class="addx" id="addx">+ Добавить пункт</button>
+    <div class="hint" style="margin-top:8px">Быстро добавить:</div>
+    <div class="xchips" id="xchips"></div>
     <label>Пакет</label><input name="package" list="pkglist" value="${esc(fmtPkg(w.package))}" placeholder="Выбери из своих пакетов или впиши">
     <datalist id="pkglist">${SETTINGS.packages.map(p=>`<option value="${esc(fmtPkg(p.name))}">`).join("")}</datalist>
     <div class="hint" id="pkghint"></div>
@@ -683,6 +698,12 @@ function edit(id,k){
     <div class="err" id="err"></div>
    </form>`;
   const cb=$("cancel"); if(cb)cb.onclick=()=>view(k);
+  const xbox=$("extras");
+  const addRow=(name="",value="",focus)=>{const d=document.createElement("div");d.className="xrow";d.innerHTML=`<input class="xn" placeholder="Кто: декоратор, DJ…" value="${esc(name)}"><div class="xv"><input class="xval" placeholder="Имя, контакт, время" value="${esc(value)}"><button type="button" class="xdel" aria-label="Удалить пункт">×</button></div>`;d.querySelector(".xdel").onclick=()=>{d.remove();drawChips();haptic()};d.querySelector(".xn").oninput=drawChips;xbox.appendChild(d);if(focus)(name?d.querySelector(".xval"):d.querySelector(".xn")).focus();drawChips()};
+  const drawChips=()=>{const have=new Set([...xbox.querySelectorAll(".xn")].map(i=>i.value.trim().toLowerCase()));const list=extraSuggest().filter(n=>!have.has(n.toLowerCase()));$("xchips").innerHTML=list.map(n=>`<button type="button" class="xchip">${esc(n)}</button>`).join("");$("xchips").querySelectorAll(".xchip").forEach(b=>b.onclick=()=>{addRow(b.textContent,"",true);haptic()})};
+  (Array.isArray(w.extra)?w.extra:[]).forEach(x=>addRow(x.name||"",x.value||""));
+  $("addx").onclick=()=>{addRow("","",true);haptic()};
+  drawChips();
   $("kseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("kseg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));$("frm").querySelector("[name=kind]").value=b.dataset.k;$("khint").textContent="";haptic()});
   const fpk=$("frm").querySelector("[name=package]"), fgive=$("frm").querySelector("[name=deliverables]"), fbal=$("frm").querySelector("[name=balance]"), fpre=$("frm").querySelector("[name=prepay]");
   const pkHint=()=>{const p=pkgOf({package:fpk.value});$("pkghint").textContent=p?`Рилсы — ${+p.reelsDays||7} дн.${+p.finalMonths?`, клип/фильм — ${p.finalMonths} мес.`:""}${p.price?`, цена ${Number(p.price).toLocaleString("ru-RU")} ₽`:""}`:(SETTINGS.packages.length?(fpk.value?"Такого пакета нет в «Мои пакеты» — сроки впиши ниже или добавь пакет":""):"Пакеты ещё не настроены — нажми «⚙︎ Мои пакеты» на главном экране")};
@@ -700,6 +721,10 @@ function edit(id,k){
     for(const f of ["stage","paid","paidDate","reelsDone","finalDone"]) if(w[f]!=null) o[f]=w[f];
     for(const f of ["couple","label","todo","kind","orgRole","organizer","venue","photographer","host","package","deliverables","notes"]){const v=String(fd.get(f)||"").trim(); if(v)o[f]=v}
     for(const f of ["prepay","balance","agency","reelsDays","finalMonths"]){const n=num(fd.get(f)); if(n!==null)o[f]=n}
+    const ex=[...$("extras").querySelectorAll(".xrow")].map(r=>({name:r.querySelector(".xn").value.trim(),value:r.querySelector(".xval").value.trim()})).filter(x=>x.name&&x.value);
+    if(ex.length)o.extra=ex;
+    const known=new Set([...(SETTINGS.extraNames||[]),...EXTRA_DEFAULTS].map(n=>n.toLowerCase()));const fresh=ex.map(x=>x.name).filter(n=>!known.has(n.toLowerCase()));
+    if(fresh.length){SETTINGS={...SETTINGS,extraNames:[...fresh,...(SETTINGS.extraNames||[])].slice(0,20)};try{await window.__STORE__.settings.set(SETTINGS)}catch(_){}}
     await save(id||newId(k),o,k);
   };
 }
